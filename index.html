@@ -62,7 +62,9 @@
     <table>
       <thead>
         <tr>
-          <th>#</th><th>Ism</th><th>Telefon</th><th>Tovar</th><th>Narx</th><th>Berilgan</th><th>Qoldiq</th><th>Amal</th>
+          <th>#</th><th>Ism</th><th>Telefon</th>
+          <th>Tovar (dona)</th><th>Narx</th><th><b>Jami summa</b></th>
+          <th>Berilgan</th><th>Qoldiq</th><th>Amal</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -117,7 +119,7 @@
 
 <script>
 /* ====== Saqlash/yuklash (localStorage) ====== */
-const STORAGE_KEY = 'qarz_tolov_app_v1';
+const STORAGE_KEY = 'qarz_tolov_app_v2';
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 function load(){
   try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
@@ -150,10 +152,10 @@ function refresh(){
   let jamiQarz=0, jamiTolov=0, jamiQoldiq=0;
 
   data.forEach((c,i)=>{
-    const asosiy = c.qty*c.price;               // qty × price
-    const qoldiq = Math.max(0, asosiy - c.given);
+    const jami = c.qty * c.price;        // Jami summa (qty × price)
+    const qoldiq = Math.max(0, jami - c.given);
 
-    jamiQarz  += asosiy;
+    jamiQarz  += jami;
     jamiTolov += c.given;
     jamiQoldiq+= qoldiq;
 
@@ -164,6 +166,7 @@ function refresh(){
         <td>${c.phone||''}</td>
         <td>${fmt(c.qty)}</td>
         <td>${fmt(c.price)}</td>
+        <td><b>${fmt(jami)}</b></td>
         <td>${fmt(c.given)}</td>
         <td><b>${fmt(qoldiq)}</b></td>
         <td class="row-actions">
@@ -225,7 +228,7 @@ function openQarz(i){
 document.getElementById('formQarz').onsubmit = ()=>{
   const summa = getVal('qarzSumma'); if(!summa) return;
   const c = data[currentIndex];
-  if(c.price>0){ c.qty += (summa / c.price); } // qarz miqdorini tovar qiymatiga qo'shamiz
+  if(c.price>0){ c.qty += (summa / c.price); } // qarz → tovar qiymatiga qo‘shildi
   save(); refresh();
 };
 
