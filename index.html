@@ -119,7 +119,7 @@
     </form>
   </dialog>
 
-  <!-- Quick transaction (tovar/qarz/to'lov) -->
+  <!-- Quick transaction (tovar/qarz/to'lov) with info + confirm -->
   <dialog id="dlgTxn">
     <div class="modal-head" id="dlgTxnTitle">Yangi yozuv</div>
     <form method="dialog" id="frmTxn">
@@ -128,19 +128,26 @@
           <label class="field"><input id="tAmount" type="number" required min="0" step="100" placeholder="Miqdor" /></label>
           <label class="field"><input id="tNote" placeholder="Izoh (ixtiyoriy)" /></label>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="tBase" type="button" class="btn btn-accent btn-pill">TOVAR (dona+)</button>
-          <button id="tQarz" type="button" class="btn btn-red btn-pill">QARZ</button>
-          <button id="tTolov" type="button" class="btn btn-green btn-pill">TO'LOV</button>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button id="tBase"  type="button" class="btn btn-accent btn-pill" data-type="base">TOVAR (dona+)</button>
+          <button id="tQarz"  type="button" class="btn btn-red btn-pill"    data-type="qarz">QARZ</button>
+          <button id="tTolov" type="button" class="btn btn-green btn-pill"  data-type="tolov">TO'LOV</button>
         </div>
+
+        <label class="field">
+          <input id="tInfo" disabled placeholder="Berilgan (joriy) va Qoldiq (joriy) bu yerda ko'rinadi">
+        </label>
       </div>
+
       <div class="modal-foot">
         <button type="button" class="btn" id="btnCancelTxn">Bekor</button>
+        <button type="button" class="btn-green" id="btnCommitTxn">Tasdiqlash</button>
       </div>
     </form>
   </dialog>
 
-  <!-- Report / Detail edit (qty/price/given + overview) -->
+  <!-- Report / Detail -->
   <dialog id="dlgReport">
     <div class="modal-head">Hisobot / Mijoz tafsiloti</div>
     <form method="dialog" id="frmReport">
@@ -164,7 +171,7 @@
 
   <script>
   // ===== Data layer & helpers =====
-  const storeKey = "nasiya_customers_v4";
+  const storeKey = "nasiya_customers_v5";
   const $ = s => document.querySelector(s);
   const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
 
@@ -230,7 +237,7 @@
   // Export / Import / Seed
   document.getElementById('btnExport').onclick = ()=>{
     const blob = new Blob([JSON.stringify(customers,null,2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='nasiya-data-v4.json'; a.click(); URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='nasiya-data-v5.json'; a.click(); URL.revokeObjectURL(a.href);
   };
   document.getElementById('fileImport').addEventListener('change', e=>{
     const f=e.target.files[0]; if(!f) return;
@@ -239,7 +246,7 @@
   document.getElementById('btnSeed').onclick = ()=>{
     if(!confirm("Namuna ma'lumotlarini o'rnataymi?")) return;
     customers = [
-      {id:crypto.randomUUID(),name:'Sanjar',phone:'975151777',qty:10,price:350,given:2000,txns:[/* misol uchun qarz/to'lov yo'q */]},
+      {id:crypto.randomUUID(),name:'Sanjar',phone:'975151777',qty:10,price:350,given:2000,txns:[]},
       {id:crypto.randomUUID(),name:'Zarina',phone:'931112233',qty:5,price:30000,given:0,txns:[{type:'tolov',amount:20000}]}
     ];
     save(); refresh();
@@ -301,26 +308,76 @@
     };
   }
 
-  // ------- Quick Txn modal (tovar/qarz/to'lov)
+  // ------- Quick Txn modal (tovar/qarz/to'lov) — info + confirm
   const dlgTxn = document.getElementById('dlgTxn');
   document.getElementById('btnCancelTxn').onclick = ()=> dlgTxn.close();
+
   function openTxn(c, preset){
-    document.getElementById('tAmount').value=''; document.getElementById('tNote').value='';
-    document.getElementById('dlgTxnTitle').textContent = preset==='base' ? "Tovar qo'shish (dona)" : "Yangi yozuv";
+    const $amt = document.getElementById('tAmount');
+    const $note = document.getElementById('tNote');
+    const $info = document.getElementById('tInfo');
+    const $commit = document.getElementById('btnCommitTxn');
+    const typeBtns = [document.getElementById('tBase'), document.getElementById('tQarz'), document.getElementById('tTolov')];
+
+    $amt.value=''; $note.value=''; $info.value='';
+    document.getElementById('dlgTxnTitle').textContent =
+      preset==='base' ? "Tovar qo'shish (dona)" :
+      preset==='qarz' ? "Qarz yozish" :
+      preset==='tolov'? "To'lov qabul qilish" : "Yangi yozuv";
+
     dlgTxn.showModal();
-    const commit = (type)=>{
-      const val = Number(document.getElementById('tAmount').value);
-      if(!val){ alert('Miqdor kiriting'); return; }
-      if(type==='base'){ c.qty = Number(c.qty||0) + Math.floor(val); }
-      else{ c.txns = c.txns||[]; c.txns.push({type, amount:val, note:document.getElementById('tNote').value.trim(), ts:Date.now()}); }
+    let selected = preset || null;
+
+    function markActive(){
+      typeBtns.forEach(b=>{
+        if(b.dataset.type===selected){ b.style.boxShadow='0 0 0 3px rgba(79,140,255,.35)'; }
+        else { b.style.boxShadow='none'; }
+      });
+    }
+
+    function updateInfo(){
+      const k = calc(c);
+      const val = Number($amt.value||0);
+
+      // joriy ko'rsatkichlar
+      const berilganJoriy = k.given + k.tolov;
+      const qoldiqJoriy   = k.qoldiq;
+
+      let qoldiqYangi = qoldiqJoriy;
+
+      if(selected==='tolov' && val>0){
+        qoldiqYangi = Math.max(0, (k.base + k.qarz) - (k.given + k.tolov + val));
+      }
+      if(selected==='qarz' && val>0){
+        qoldiqYangi = Math.max(0, (k.base + k.qarz + val) - (k.given + k.tolov));
+      }
+      if(selected==='base' && val>0){
+        const yangiBase = (k.qty + Math.floor(val)) * k.price;
+        qoldiqYangi = Math.max(0, (yangiBase + k.qarz) - (k.given + k.tolov));
+      }
+
+      $info.value = `Berilgan (joriy): ${fmt(berilganJoriy)} • Qoldiq (joriy): ${fmt(qoldiqJoriy)}`
+                    + (val>0 && selected ? `  →  Kutilgan qoldiq: ${fmt(qoldiqYangi)}` : '');
+    }
+
+    typeBtns.forEach(b=> b.onclick = ()=>{ selected=b.dataset.type; markActive(); updateInfo(); });
+    if(preset){ markActive(); }
+    $amt.oninput = updateInfo;
+
+    $commit.onclick = ()=>{
+      const amount = Number($amt.value);
+      if(!selected){ alert("Avval amal turini tanlang: Tovar, Qarz yoki To'lov"); return; }
+      if(!amount){ alert("Miqdor kiriting"); return; }
+
+      if(selected==='base'){ c.qty = Number(c.qty||0) + Math.floor(amount); }
+      else{
+        c.txns = c.txns || [];
+        c.txns.push({type:selected, amount, note:$note.value.trim(), ts:Date.now()});
+      }
       save(); refresh(); dlgTxn.close();
     };
-    document.getElementById('tBase').onclick = ()=> commit('base');
-    document.getElementById('tQarz').onclick = ()=> commit('qarz');
-    document.getElementById('tTolov').onclick = ()=> commit('tolov');
-    if(preset==='base') document.getElementById('tBase').focus();
-    if(preset==='qarz') document.getElementById('tQarz').focus();
-    if(preset==='tolov') document.getElementById('tTolov').focus();
+
+    if(preset==='tolov'){ selected='tolov'; markActive(); updateInfo(); }
   }
 
   // ------- Report modal (edit qty/price/given live + overview)
@@ -352,7 +409,7 @@
     };
   }
 
-  // PWA
+  // PWA (ixtiyoriy, fayl bo'lsa ishlaydi)
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=> navigator.serviceWorker.register('service-worker.js'));
   }
