@@ -171,7 +171,7 @@
 
   <script>
   // ===== Data layer & helpers =====
-  const storeKey = "nasiya_customers_v5";
+  const storeKey = "nasiya_customers_v6";
   const $ = s => document.querySelector(s);
   const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
 
@@ -237,7 +237,7 @@
   // Export / Import / Seed
   document.getElementById('btnExport').onclick = ()=>{
     const blob = new Blob([JSON.stringify(customers,null,2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='nasiya-data-v5.json'; a.click(); URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='nasiya-data-v6.json'; a.click(); URL.revokeObjectURL(a.href);
   };
   document.getElementById('fileImport').addEventListener('change', e=>{
     const f=e.target.files[0]; if(!f) return;
@@ -338,11 +338,8 @@
     function updateInfo(){
       const k = calc(c);
       const val = Number($amt.value||0);
-
-      // joriy ko'rsatkichlar
       const berilganJoriy = k.given + k.tolov;
       const qoldiqJoriy   = k.qoldiq;
-
       let qoldiqYangi = qoldiqJoriy;
 
       if(selected==='tolov' && val>0){
@@ -409,7 +406,7 @@
     };
   }
 
-  // PWA (ixtiyoriy, fayl bo'lsa ishlaydi)
+  // PWA (bo‘lsa ishlaydi)
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=> navigator.serviceWorker.register('service-worker.js'));
   }
