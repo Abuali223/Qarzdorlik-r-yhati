@@ -8,30 +8,17 @@
   <meta name="theme-color" content="#0e1116"/>
   <style>
     :root{
-      --bg:#0e1116;
-      --panel:#151a22;
-      --muted:#8a94a6;
-      --text:#e6eefc;
-      --accent:#4f8cff;
-      --accent-2:#22c55e;
-      --warn:#ef4444;
-      --border:#232936;
-      --chip:#1d2430;
-      --focus: 0 0 0 3px rgba(79,140,255,.35);
-      --radius:12px;
+      --bg:#0e1116; --panel:#151a22; --muted:#8a94a6; --text:#e6eefc;
+      --accent:#4f8cff; --accent-2:#22c55e; --warn:#ef4444;
+      --border:#232936; --chip:#1d2430; --focus:0 0 0 3px rgba(79,140,255,.35); --radius:12px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";}
-    .container{max-width:1200px;margin:24px auto;padding:0 16px;}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
+    .container{max-width:1200px;margin:24px auto;padding:0 16px}
     header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-    .brand{font-weight:700;letter-spacing:.2px}
-    .brand small{color:var(--muted);font-weight:500}
+    .brand{font-weight:700}.brand small{color:var(--muted);font-weight:500}
     .toolbar{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-    button, .btn{
-      border:1px solid var(--border);background:var(--chip);color:var(--text);
-      padding:10px 14px;border-radius:10px;cursor:pointer;transition:.2s;display:inline-flex;gap:8px;align-items:center;
-    }
+    button,.btn{border:1px solid var(--border);background:var(--chip);color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer;transition:.2s;display:inline-flex;gap:8px;align-items:center}
     button:hover{filter:brightness(1.08)}
     .btn-accent{background:#0f1a2b;border-color:#1e2a3d;box-shadow:var(--focus)}
     .btn-green{background:#0f2316;border-color:#1d3b26;color:#c8f7d1}
@@ -42,7 +29,7 @@
     .stat h3{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600}
     .stat .num{font-size:22px;font-weight:700}
     .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-    .card-head{display:flex;align-items:center;gap:10px;padding:12px 12px;border-bottom:1px solid var(--border)}
+    .card-head{display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid var(--border)}
     .card-head h2{margin:0;font-size:16px}
     .search{flex:1;display:flex;gap:8px}
     .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
@@ -51,19 +38,17 @@
     th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left}
     th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.01)}
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-    .chip{background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted);}
+    .chip{background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted)}
     .empty{color:var(--muted);text-align:center;padding:32px}
-    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:560px;width:calc(100% - 24px)}
+    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:640px;width:calc(100% - 24px)}
     dialog::backdrop{background:rgba(0,0,0,.55)}
     .modal-head{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
     .modal-body{padding:16px;display:grid;gap:12px}
     .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     input[type="number"]{appearance:textfield}
-    @media(max-width:900px){
-      .stats{grid-template-columns:1fr}
-      .grid-2{grid-template-columns:1fr}
-    }
+    @media(max-width:900px){.stats{grid-template-columns:1fr}.grid-2,.grid-3{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -72,10 +57,7 @@
       <div class="brand">Aliaizer — <small>Nasiya & To'lovlar</small></div>
       <div class="toolbar">
         <button id="btnExport">Eksport</button>
-        <label class="btn" title="JSON import">
-          <input id="fileImport" type="file" accept="application/json" hidden>
-          Import
-        </label>
+        <label class="btn"><input id="fileImport" type="file" accept="application/json" hidden>Import</label>
         <button id="btnSeed" class="btn-green">O'rnatish</button>
         <button id="btnAdmin" class="btn-accent">Admin kirish</button>
       </div>
@@ -100,7 +82,7 @@
           <thead>
             <tr>
               <th>#</th><th>Ism</th><th>Telefon</th>
-              <th>Asosiy (summa)</th><th>Qarz</th><th>To'lov</th><th>Qoldi</th>
+              <th>Tovar (dona)</th><th>Narx</th><th>Berilgan</th><th>Qoldiq</th>
               <th>Amal</th>
             </tr>
           </thead>
@@ -117,10 +99,18 @@
     <form method="dialog" id="frmCustomer">
       <div class="modal-body">
         <div class="grid-2">
-          <label class="field"> <input id="cName" required placeholder="Ism" /> </label>
-          <label class="field"> <input id="cPhone" placeholder="Telefon: +998..." /> </label>
+          <label class="field"><input id="cName" required placeholder="Ism" /></label>
+          <label class="field"><input id="cPhone" placeholder="Telefon: +998..." /></label>
         </div>
-        <label class="field"> <input id="cBase" type="number" min="0" step="1000" placeholder="Asosiy (Tovar) summa" /> </label>
+        <div class="grid-3">
+          <label class="field"><input id="cQty" type="number" min="0" step="1" placeholder="Tovar dona" /></label>
+          <label class="field"><input id="cPrice" type="number" min="0" step="100" placeholder="Narx" /></label>
+          <label class="field"><input id="cGiven" type="number" min="0" step="100" placeholder="Berilgan summa" /></label>
+        </div>
+        <div class="grid-2">
+          <div class="field"><input id="cComputed" disabled placeholder="Hisob: Asosiy, Qoldiq"></div>
+          <div class="field"><input id="cNote" placeholder="Izoh (ixtiyoriy)"/></div>
+        </div>
       </div>
       <div class="modal-foot">
         <button type="button" class="btn" id="btnCancelCustomer">Bekor</button>
@@ -129,17 +119,17 @@
     </form>
   </dialog>
 
-  <!-- Add Transaction -->
+  <!-- Quick transaction (tovar/qarz/to'lov) -->
   <dialog id="dlgTxn">
     <div class="modal-head" id="dlgTxnTitle">Yangi yozuv</div>
     <form method="dialog" id="frmTxn">
       <div class="modal-body">
         <div class="grid-2">
-          <label class="field"> <input id="tAmount" type="number" required min="0" step="1000" placeholder="Miqdor" /> </label>
-          <label class="field"> <input id="tNote" placeholder="Izoh (ixtiyoriy)" /> </label>
+          <label class="field"><input id="tAmount" type="number" required min="0" step="100" placeholder="Miqdor" /></label>
+          <label class="field"><input id="tNote" placeholder="Izoh (ixtiyoriy)" /></label>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="tBase" type="button" class="btn btn-accent btn-pill">SUMMA (Asosiy)</button>
+          <button id="tBase" type="button" class="btn btn-accent btn-pill">TOVAR (dona+)</button>
           <button id="tQarz" type="button" class="btn btn-red btn-pill">QARZ</button>
           <button id="tTolov" type="button" class="btn btn-green btn-pill">TO'LOV</button>
         </div>
@@ -150,147 +140,179 @@
     </form>
   </dialog>
 
+  <!-- Report / Detail edit (qty/price/given + overview) -->
+  <dialog id="dlgReport">
+    <div class="modal-head">Hisobot / Mijoz tafsiloti</div>
+    <form method="dialog" id="frmReport">
+      <div class="modal-body">
+        <div class="grid-3">
+          <label class="field"><input id="rQty" type="number" min="0" step="1" placeholder="Tovar dona" /></label>
+          <label class="field"><input id="rPrice" type="number" min="0" step="100" placeholder="Narx" /></label>
+          <label class="field"><input id="rGiven" type="number" min="0" step="100" placeholder="Berilgan" /></label>
+        </div>
+        <div class="grid-2">
+          <div class="field"><input id="rSummary" disabled placeholder="Asosiy, Jami qarz/to'lov, Qoldiq"></div>
+          <div class="field"><input id="rPhone" placeholder="Telefon" /></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="btnCancelReport">Bekor</button>
+        <button type="submit" class="btn-green">Tasdiqlash</button>
+      </div>
+    </form>
+  </dialog>
+
   <script>
-  // ---- Data layer ----
-  const storeKey = "nasiya_customers_v2";
-  const $ = (s)=>document.querySelector(s);
-  const $$ = (s)=>Array.from(document.querySelectorAll(s));
+  // ===== Data layer & helpers =====
+  const storeKey = "nasiya_customers_v4";
+  const $ = s => document.querySelector(s);
   const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
 
   let customers = load();
-  function load(){ try{ return JSON.parse(localStorage.getItem(storeKey)) || []; }catch{ return []; } }
+  function load(){ try { return JSON.parse(localStorage.getItem(storeKey)) || []; } catch { return []; } }
   function save(){ localStorage.setItem(storeKey, JSON.stringify(customers)); }
 
+  // Asosiy formula:
+  // base = qty*price
+  // qoldiq = base + qarz - (given + tolov)
   function calc(c){
-    const base = Number(c.base||0);
-    const qarz = (c.txns||[]).filter(x=>x.type==='qarz').reduce((a,b)=>a+Number(b.amount||0),0);
+    const qty   = Math.max(0, Math.floor(Number(c.qty||0)));
+    const price = Math.max(0, Number(c.price||0));
+    const given = Math.max(0, Number(c.given||0));
+    const base  = qty*price;
+    const qarz  = (c.txns||[]).filter(x=>x.type==='qarz').reduce((a,b)=>a+Number(b.amount||0),0);
     const tolov = (c.txns||[]).filter(x=>x.type==='tolov').reduce((a,b)=>a+Number(b.amount||0),0);
-    const qoldiq = base + qarz - tolov;
-    return {base, qarz, tolov, qoldiq};
+    const qoldiq = Math.max(0, base + qarz - (given + tolov));
+    return {qty, price, given, base, qarz, tolov, qoldiq};
   }
 
+  // ===== UI =====
   function refresh(){
     const q = $('#searchInput').value.trim().toLowerCase();
     const tbody = $('#tbody'); tbody.innerHTML = '';
-    let filtered = customers.map(c=>({...c, ...calc(c)}));
-    if(q) filtered = filtered.filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
-    $('#empty').style.display = filtered.length===0 ? 'block' : 'none';
+    let list = customers.map(c=>({...c, ...calc(c)}));
+    if(q) list = list.filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
+    $('#empty').style.display = list.length ? 'none' : 'block';
 
-    filtered.forEach((c, i)=>{
+    list.forEach((c,i)=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${i+1}</td>
         <td>${c.name||''}</td>
         <td><span class="chip">${c.phone||''}</span></td>
-        <td>${fmt(c.base)}</td>
-        <td>${fmt(c.qarz)}</td>
-        <td>${fmt(c.tolov)}</td>
+        <td>${fmt(c.qty)}</td>
+        <td>${fmt(c.price)}</td>
+        <td>${fmt(c.given)}</td>
         <td><strong>${fmt(c.qoldiq)}</strong></td>
         <td class="row-actions">
           <button class="btn-accent btn-pill" data-act="base" data-id="${c.id}">Tovar</button>
           <button class="btn-red btn-pill" data-act="qarz" data-id="${c.id}">Qarz</button>
           <button class="btn-green btn-pill" data-act="tolov" data-id="${c.id}">To'lov</button>
+          <button class="btn" data-act="report" data-id="${c.id}">Hisobot</button>
           <button class="btn" data-act="edit" data-id="${c.id}">Tahrirlash</button>
           <button class="btn" data-act="del" data-id="${c.id}">O'chirish</button>
         </td>`;
       tbody.appendChild(tr);
     });
 
-    // umumiy statistika
-    const agg = filtered.reduce((a,c)=>{ a.qarz+=c.qarz; a.tolov+=c.tolov; a.base+=c.base; return a; }, {qarz:0, tolov:0, base:0});
-    const qoldiq = agg.base + agg.qarz - agg.tolov;
-    document.getElementById('statJamiQarz').textContent = fmt(agg.base + agg.qarz); // majburiyat = Asosiy + Qarz
-    document.getElementById('statQaytganTolov').textContent = fmt(agg.tolov);
-    document.getElementById('statQoldiq').textContent = fmt(qoldiq);
+    // Umumiy statistikalar
+    const agg = list.reduce((a,c)=>{ a.base+=c.base; a.qarz+=c.qarz; a.tolov+=c.tolov; a.given+=c.given; return a; }, {base:0, qarz:0, tolov:0, given:0});
+    const majburiyat = agg.base + agg.qarz;
+    const qaytgan = agg.given + agg.tolov;
+    const qol = Math.max(0, majburiyat - qaytgan);
+    $('#statJamiQarz').textContent = fmt(majburiyat);
+    $('#statQaytganTolov').textContent = fmt(qaytgan);
+    $('#statQoldiq').textContent = fmt(qol);
   }
 
-  // ---- UI handlers ----
   document.getElementById('searchInput').addEventListener('input', refresh);
 
-  document.getElementById('btnAdd').addEventListener('click', ()=> openCustomer());
-  document.getElementById('btnExport').addEventListener('click', ()=>{
+  // Export / Import / Seed
+  document.getElementById('btnExport').onclick = ()=>{
     const blob = new Blob([JSON.stringify(customers,null,2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'nasiya-data-v2.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='nasiya-data-v4.json'; a.click(); URL.revokeObjectURL(a.href);
+  };
+  document.getElementById('fileImport').addEventListener('change', e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(Array.isArray(d)){ customers=d; save(); refresh(); alert('Import qilindi ✅');} else alert('Noto‘g‘ri fayl'); } catch{ alert('Xatolik'); } }; r.readAsText(f);
   });
-  document.getElementById('fileImport').addEventListener('change', (e)=>{
-    const file = e.target.files[0]; if(!file) return;
-    const r = new FileReader(); r.onload = ()=>{
-      try{
-        const data = JSON.parse(r.result);
-        if(Array.isArray(data)){ customers = data; save(); refresh(); alert('Import qilindi ✅'); }
-        else alert('Noto‘g‘ri fayl');
-      }catch{ alert('O‘qishda xatolik'); }
-    }; r.readAsText(file);
-  });
-  document.getElementById('btnSeed').addEventListener('click', ()=>{
+  document.getElementById('btnSeed').onclick = ()=>{
     if(!confirm("Namuna ma'lumotlarini o'rnataymi?")) return;
     customers = [
-      {id: crypto.randomUUID(), name:'Ali', phone:'+998 90 123 45 67', base:150000, txns:[{type:'qarz',amount:20000},{type:'tolov',amount:50000}]},
-      {id: crypto.randomUUID(), name:'Zarina', phone:'+998 93 111 22 33', base:80000, txns:[{type:'tolov',amount:10000}]},
+      {id:crypto.randomUUID(),name:'Sanjar',phone:'975151777',qty:10,price:350,given:2000,txns:[/* misol uchun qarz/to'lov yo'q */]},
+      {id:crypto.randomUUID(),name:'Zarina',phone:'931112233',qty:5,price:30000,given:0,txns:[{type:'tolov',amount:20000}]}
     ];
     save(); refresh();
-  });
+  };
+  document.getElementById('btnAdmin').onclick = ()=> alert('Demo rejim: parol talab qilinmaydi.');
 
-  document.getElementById('btnAdmin').addEventListener('click', ()=> alert('Demo rejim: parol talab qilinmaydi.'));
-
-  // jadval tugmalari
-  document.getElementById('tbody').addEventListener('click', (e)=>{
+  // Table actions
+  document.getElementById('tbody').addEventListener('click', e=>{
     const btn = e.target.closest('button'); if(!btn) return;
-    const id = btn.dataset.id;
-    const act = btn.dataset.act;
-    const c = customers.find(x=>x.id===id);
-    if(!c) return;
+    const id = btn.dataset.id; const act = btn.dataset.act;
+    const c = customers.find(x=>x.id===id); if(!c) return;
+    if(act==='del'){ if(confirm("O'chirishni tasdiqlang")){ customers = customers.filter(x=>x.id!==id); save(); refresh(); } return; }
     if(act==='edit') openCustomer(c);
-    if(act==='del'){ if(confirm('O‘chirishni tasdiqlang')){ customers = customers.filter(x=>x.id!==id); save(); refresh(); } }
+    if(act==='report') openReport(c);
     if(['base','qarz','tolov'].includes(act)) openTxn(c, act);
   });
 
-  // ---- Customer modal ----
+  // Add customer
+  document.getElementById('btnAdd').onclick = ()=> openCustomer();
+
+  // ------- Customer modal
   const dlgCustomer = document.getElementById('dlgCustomer');
   document.getElementById('btnCancelCustomer').onclick = ()=> dlgCustomer.close();
+
+  function updateComputed(){
+    const qty = Math.floor(Number(document.getElementById('cQty').value||0));
+    const price = Number(document.getElementById('cPrice').value||0);
+    const given = Number(document.getElementById('cGiven').value||0);
+    const base = Math.max(0, qty)*Math.max(0, price);
+    const rest = Math.max(0, base - given);
+    document.getElementById('cComputed').value = `Asosiy: ${fmt(base)} | Qoldiq: ${fmt(rest)}`;
+  }
+  ['cQty','cPrice','cGiven'].forEach(id=> document.addEventListener('input', e=>{ if(e.target.id===id) updateComputed(); }));
+
   function openCustomer(c){
     document.getElementById('dlgCustomerTitle').textContent = c ? "Mijozni tahrirlash" : "Yangi mijoz";
     document.getElementById('cName').value = c?.name || '';
     document.getElementById('cPhone').value = c?.phone || '';
-    document.getElementById('cBase').value = c?.base || '';
-    dlgCustomer.returnValue = 'cancel';
+    document.getElementById('cQty').value = c?.qty || '';
+    document.getElementById('cPrice').value = c?.price || '';
+    document.getElementById('cGiven').value = c?.given || '';
+    document.getElementById('cNote').value = c?.note || '';
+    updateComputed();
     dlgCustomer.showModal();
+
     document.getElementById('frmCustomer').onsubmit = (ev)=>{
       ev.preventDefault();
-      const name = document.getElementById('cName').value.trim();
+      const name  = document.getElementById('cName').value.trim();
       if(!name){ alert('Ism shart'); return; }
       const phone = document.getElementById('cPhone').value.trim();
-      const base = Number(document.getElementById('cBase').value||0);
-      if(c){
-        c.name = name; c.phone = phone; c.base = base;
-      }else{
-        customers.push({id: crypto.randomUUID(), name, phone, base, txns:[]});
-      }
+      const qty   = Math.floor(Number(document.getElementById('cQty').value||0));
+      const price = Number(document.getElementById('cPrice').value||0);
+      const given = Number(document.getElementById('cGiven').value||0);
+      const note  = document.getElementById('cNote').value.trim();
+
+      if(c){ c.name=name; c.phone=phone; c.qty=qty; c.price=price; c.given=given; c.note=note; }
+      else { customers.push({id:crypto.randomUUID(), name, phone, qty, price, given, note, txns:[]}); }
       save(); refresh(); dlgCustomer.close();
     };
   }
 
-  // ---- Transaction modal ----
+  // ------- Quick Txn modal (tovar/qarz/to'lov)
   const dlgTxn = document.getElementById('dlgTxn');
   document.getElementById('btnCancelTxn').onclick = ()=> dlgTxn.close();
-  function openTxn(c, preset){ // 'base' | 'qarz' | 'tolov'
-    document.getElementById('tAmount').value=''; 
-    document.getElementById('tNote').value='';
-    document.getElementById('dlgTxnTitle').textContent = preset==='base' ? "Tovar (Asosiy) qo'shish" : "Yangi yozuv";
+  function openTxn(c, preset){
+    document.getElementById('tAmount').value=''; document.getElementById('tNote').value='';
+    document.getElementById('dlgTxnTitle').textContent = preset==='base' ? "Tovar qo'shish (dona)" : "Yangi yozuv";
     dlgTxn.showModal();
     const commit = (type)=>{
-      const amount = Number(document.getElementById('tAmount').value);
-      if(!amount){ alert('Miqdor kiriting'); return; }
-      if(type==='base'){
-        c.base = Number(c.base||0) + amount;
-      } else {
-        c.txns = c.txns||[];
-        c.txns.push({type, amount, note: document.getElementById('tNote').value.trim(), ts: Date.now()});
-      }
+      const val = Number(document.getElementById('tAmount').value);
+      if(!val){ alert('Miqdor kiriting'); return; }
+      if(type==='base'){ c.qty = Number(c.qty||0) + Math.floor(val); }
+      else{ c.txns = c.txns||[]; c.txns.push({type, amount:val, note:document.getElementById('tNote').value.trim(), ts:Date.now()}); }
       save(); refresh(); dlgTxn.close();
     };
     document.getElementById('tBase').onclick = ()=> commit('base');
@@ -299,6 +321,35 @@
     if(preset==='base') document.getElementById('tBase').focus();
     if(preset==='qarz') document.getElementById('tQarz').focus();
     if(preset==='tolov') document.getElementById('tTolov').focus();
+  }
+
+  // ------- Report modal (edit qty/price/given live + overview)
+  const dlgReport = document.getElementById('dlgReport');
+  document.getElementById('btnCancelReport').onclick = ()=> dlgReport.close();
+  function openReport(c){
+    const fill = ()=>{
+      const k = calc(c);
+      rQty.value = c.qty||0; rPrice.value = c.price||0; rGiven.value = c.given||0; rPhone.value = c.phone||'';
+      rSummary.value = `Asosiy: ${fmt(k.base)} | Jami qarz: ${fmt(k.qarz)} | Jami to'lov: ${fmt(k.given + k.tolov)} | Qoldiq: ${fmt(k.qoldiq)}`;
+    };
+    dlgReport.showModal(); fill();
+
+    ['rQty','rPrice','rGiven'].forEach(id=>{
+      document.getElementById(id).oninput = ()=>{
+        const tmp = {...c, qty:Number(rQty.value||0), price:Number(rPrice.value||0), given:Number(rGiven.value||0)};
+        const k = calc(tmp);
+        rSummary.value = `Asosiy: ${fmt(k.base)} | Jami qarz: ${fmt(k.qarz)} | Jami to'lov: ${fmt(k.given + k.tolov)} | Qoldiq: ${fmt(k.qoldiq)}`;
+      };
+    });
+
+    document.getElementById('frmReport').onsubmit = (ev)=>{
+      ev.preventDefault();
+      c.qty = Number(rQty.value||0);
+      c.price = Number(rPrice.value||0);
+      c.given = Number(rGiven.value||0);
+      c.phone = rPhone.value.trim();
+      save(); refresh(); dlgReport.close();
+    };
   }
 
   // PWA
