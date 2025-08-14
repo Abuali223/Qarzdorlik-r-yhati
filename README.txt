@@ -1,11 +1,8 @@
-# Nasiya & To'lovlar (PWA)
+# Nasiya & To'lovlar v2
 
-- Mahalliy `localStorage`da saqlanadi (backend talab qilmaydi)
+Yangi: **Asosiy (Tovar) summasi** qo'shildi. Hisob: `Qoldiq = Asosiy + Jami Qarz − Jami To'lov`
+
 - Mijoz qo'shish / tahrirlash / o'chirish
-- Qarz va To'lov yozuvlari alohida tugma orqali
-- Jami qarz, Qaytgan to'lov, Qoldiq statistikasi
-- Qidirish, JSON import/eksport
-- Mobil & desktop uchun mos, oflayn ishlaydi (PWA)
-
-## Ishga tushirish
-`index.html` faylini brauzerda oching yoki GitHub Pages'ga yuklang.
+- Tovar (Asosiy) qo'shish, Qarz va To'lov yozish alohida tugmalar orqali
+- Jami qarzdorlik, qaytarilgan to'lov va qoldiq avtomatik
+- Qidirish, JSON import/eksport, PWA (oflayn)
