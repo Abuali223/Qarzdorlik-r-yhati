@@ -174,7 +174,8 @@
     const tbody = $('#tbody'); tbody.innerHTML = '';
     let filtered = customers.map(c=>({...c, ...calc(c)}));
     if(q) filtered = filtered.filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
-    if(filtered.length===0){ $('#empty').style.display='block'; } else { $('#empty').style.display='none'; }
+    $('#empty').style.display = filtered.length===0 ? 'block' : 'none';
+
     filtered.forEach((c, i)=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -195,22 +196,19 @@
       tbody.appendChild(tr);
     });
 
-    // stats
-    const agg = filtered.reduce((a,c)=>{
-      a.qarz += c.qarz; a.tolov += c.tolov; a.base += c.base;
-      return a;
-    }, {qarz:0, tolov:0, base:0});
+    // umumiy statistika
+    const agg = filtered.reduce((a,c)=>{ a.qarz+=c.qarz; a.tolov+=c.tolov; a.base+=c.base; return a; }, {qarz:0, tolov:0, base:0});
     const qoldiq = agg.base + agg.qarz - agg.tolov;
-    $('#statJamiQarz').textContent = fmt(agg.base + agg.qarz); // umumiy majburiyat
-    $('#statQaytganTolov').textContent = fmt(agg.tolov);
-    $('#statQoldiq').textContent = fmt(qoldiq);
+    document.getElementById('statJamiQarz').textContent = fmt(agg.base + agg.qarz); // majburiyat = Asosiy + Qarz
+    document.getElementById('statQaytganTolov').textContent = fmt(agg.tolov);
+    document.getElementById('statQoldiq').textContent = fmt(qoldiq);
   }
 
   // ---- UI handlers ----
-  $('#searchInput').addEventListener('input', refresh);
+  document.getElementById('searchInput').addEventListener('input', refresh);
 
-  $('#btnAdd').addEventListener('click', ()=> openCustomer());
-  $('#btnExport').addEventListener('click', ()=>{
+  document.getElementById('btnAdd').addEventListener('click', ()=> openCustomer());
+  document.getElementById('btnExport').addEventListener('click', ()=>{
     const blob = new Blob([JSON.stringify(customers,null,2)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -218,14 +216,17 @@
     a.click();
     URL.revokeObjectURL(a.href);
   });
-  $('#fileImport').addEventListener('change', (e)=>{
+  document.getElementById('fileImport').addEventListener('change', (e)=>{
     const file = e.target.files[0]; if(!file) return;
     const r = new FileReader(); r.onload = ()=>{
-      try{ const data = JSON.parse(r.result); if(Array.isArray(data)){ customers = data; save(); refresh(); alert('Import qilindi ✅'); } else alert('Noto‘g‘ri fayl');}
-      catch{ alert('O‘qishda xatolik');}
+      try{
+        const data = JSON.parse(r.result);
+        if(Array.isArray(data)){ customers = data; save(); refresh(); alert('Import qilindi ✅'); }
+        else alert('Noto‘g‘ri fayl');
+      }catch{ alert('O‘qishda xatolik'); }
     }; r.readAsText(file);
   });
-  $('#btnSeed').addEventListener('click', ()=>{
+  document.getElementById('btnSeed').addEventListener('click', ()=>{
     if(!confirm("Namuna ma'lumotlarini o'rnataymi?")) return;
     customers = [
       {id: crypto.randomUUID(), name:'Ali', phone:'+998 90 123 45 67', base:150000, txns:[{type:'qarz',amount:20000},{type:'tolov',amount:50000}]},
@@ -234,36 +235,36 @@
     save(); refresh();
   });
 
-  $('#btnAdmin').addEventListener('click', ()=> alert('Demo rejim: parol talab qilinmaydi.'));
+  document.getElementById('btnAdmin').addEventListener('click', ()=> alert('Demo rejim: parol talab qilinmaydi.'));
 
-  // table actions
-  $('#tbody').addEventListener('click', (e)=>{
+  // jadval tugmalari
+  document.getElementById('tbody').addEventListener('click', (e)=>{
     const btn = e.target.closest('button'); if(!btn) return;
     const id = btn.dataset.id;
     const act = btn.dataset.act;
     const c = customers.find(x=>x.id===id);
     if(!c) return;
     if(act==='edit') openCustomer(c);
-    if(act==='del') { if(confirm('O‘chirishni tasdiqlang')){ customers = customers.filter(x=>x.id!==id); save(); refresh(); } }
-    if(act==='qarz' || act==='tolov' || act==='base') openTxn(c, act);
+    if(act==='del'){ if(confirm('O‘chirishni tasdiqlang')){ customers = customers.filter(x=>x.id!==id); save(); refresh(); } }
+    if(['base','qarz','tolov'].includes(act)) openTxn(c, act);
   });
 
   // ---- Customer modal ----
-  const dlgCustomer = $('#dlgCustomer');
-  $('#btnCancelCustomer').onclick = ()=> dlgCustomer.close();
+  const dlgCustomer = document.getElementById('dlgCustomer');
+  document.getElementById('btnCancelCustomer').onclick = ()=> dlgCustomer.close();
   function openCustomer(c){
-    $('#dlgCustomerTitle').textContent = c ? "Mijozni tahrirlash" : "Yangi mijoz";
-    $('#cName').value = c?.name || '';
-    $('#cPhone').value = c?.phone || '';
-    $('#cBase').value = c?.base || '';
+    document.getElementById('dlgCustomerTitle').textContent = c ? "Mijozni tahrirlash" : "Yangi mijoz";
+    document.getElementById('cName').value = c?.name || '';
+    document.getElementById('cPhone').value = c?.phone || '';
+    document.getElementById('cBase').value = c?.base || '';
     dlgCustomer.returnValue = 'cancel';
     dlgCustomer.showModal();
-    $('#frmCustomer').onsubmit = (ev)=>{
+    document.getElementById('frmCustomer').onsubmit = (ev)=>{
       ev.preventDefault();
-      const name = $('#cName').value.trim();
+      const name = document.getElementById('cName').value.trim();
       if(!name){ alert('Ism shart'); return; }
-      const phone = $('#cPhone').value.trim();
-      const base = Number($('#cBase').value||0);
+      const phone = document.getElementById('cPhone').value.trim();
+      const base = Number(document.getElementById('cBase').value||0);
       if(c){
         c.name = name; c.phone = phone; c.base = base;
       }else{
@@ -274,29 +275,30 @@
   }
 
   // ---- Transaction modal ----
-  const dlgTxn = $('#dlgTxn');
-  $('#btnCancelTxn').onclick = ()=> dlgTxn.close();
-  function openTxn(c, preset){ // preset: 'base' | 'qarz' | 'tolov'
-    $('#tAmount').value=''; $('#tNote').value='';
-    $('#dlgTxnTitle').textContent = preset==='base' ? "Tovar (Asosiy) qo'shish" : "Yangi yozuv";
+  const dlgTxn = document.getElementById('dlgTxn');
+  document.getElementById('btnCancelTxn').onclick = ()=> dlgTxn.close();
+  function openTxn(c, preset){ // 'base' | 'qarz' | 'tolov'
+    document.getElementById('tAmount').value=''; 
+    document.getElementById('tNote').value='';
+    document.getElementById('dlgTxnTitle').textContent = preset==='base' ? "Tovar (Asosiy) qo'shish" : "Yangi yozuv";
     dlgTxn.showModal();
     const commit = (type)=>{
-      const amount = Number($('#tAmount').value);
+      const amount = Number(document.getElementById('tAmount').value);
       if(!amount){ alert('Miqdor kiriting'); return; }
       if(type==='base'){
         c.base = Number(c.base||0) + amount;
       } else {
         c.txns = c.txns||[];
-        c.txns.push({type, amount, note: $('#tNote').value.trim(), ts: Date.now()});
+        c.txns.push({type, amount, note: document.getElementById('tNote').value.trim(), ts: Date.now()});
       }
       save(); refresh(); dlgTxn.close();
     };
-    $('#tBase').onclick = ()=> commit('base');
-    $('#tQarz').onclick = ()=> commit('qarz');
-    $('#tTolov').onclick = ()=> commit('tolov');
-    if(preset==='base') $('#tBase').focus();
-    if(preset==='qarz') $('#tQarz').focus();
-    if(preset==='tolov') $('#tTolov').focus();
+    document.getElementById('tBase').onclick = ()=> commit('base');
+    document.getElementById('tQarz').onclick = ()=> commit('qarz');
+    document.getElementById('tTolov').onclick = ()=> commit('tolov');
+    if(preset==='base') document.getElementById('tBase').focus();
+    if(preset==='qarz') document.getElementById('tQarz').focus();
+    if(preset==='tolov') document.getElementById('tTolov').focus();
   }
 
   // PWA
