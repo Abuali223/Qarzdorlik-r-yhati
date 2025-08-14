@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aliaizer — Nasiya & To'lovlar</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0e1116"/>
+  <style>
+    :root{
+      --bg:#0e1116;
+      --panel:#151a22;
+      --muted:#8a94a6;
+      --text:#e6eefc;
+      --accent:#4f8cff;
+      --accent-2:#22c55e;
+      --warn:#ef4444;
+      --border:#232936;
+      --chip:#1d2430;
+      --focus: 0 0 0 3px rgba(79,140,255,.35);
+      --radius:12px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";}
+    .container{max-width:1200px;margin:24px auto;padding:0 16px;}
+    header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+    .brand{font-weight:700;letter-spacing:.2px}
+    .brand small{color:var(--muted);font-weight:500}
+    .toolbar{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+    button, .btn{
+      border:1px solid var(--border);background:var(--chip);color:var(--text);
+      padding:10px 14px;border-radius:10px;cursor:pointer;transition:.2s;display:inline-flex;gap:8px;align-items:center;
+    }
+    button:hover{filter:brightness(1.08)}
+    .btn-accent{background:#0f1a2b;border-color:#1e2a3d;box-shadow:var(--focus)}
+    .btn-green{background:#0f2316;border-color:#1d3b26;color:#c8f7d1}
+    .btn-red{background:#2a1010;border-color:#3b1d1d;color:#ffd0d0}
+    .btn-pill{border-radius:999px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 20px}
+    .stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+    .stat h3{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600}
+    .stat .num{font-size:22px;font-weight:700}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .card-head{display:flex;align-items:center;gap:10px;padding:12px 12px;border-bottom:1px solid var(--border)}
+    .card-head h2{margin:0;font-size:16px}
+    .search{flex:1;display:flex;gap:8px}
+    .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
+    .field input{background:transparent;border:0;outline:0;color:var(--text);width:100%}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left}
+    th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.01)}
+    .row-actions{display:flex;gap:6px}
+    .chip{background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted);}
+    .empty{color:var(--muted);text-align:center;padding:32px}
+    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:520px;width:calc(100% - 24px)}
+    dialog::backdrop{background:rgba(0,0,0,.55)}
+    .modal-head{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
+    .modal-body{padding:16px;display:grid;gap:12px}
+    .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    input[type="number"]{appearance:textfield}
+    @media(max-width:760px){.stats{grid-template-columns:1fr} .grid-2{grid-template-columns:1fr} header{gap:8px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">Aliaizer — <small>Nasiya & To'lovlar</small></div>
+      <div class="toolbar">
+        <button id="btnExport">Eksport</button>
+        <label class="btn" title="JSON import">
+          <input id="fileImport" type="file" accept="application/json" hidden>
+          Import
+        </label>
+        <button id="btnSeed" class="btn-green">O'rnatish</button>
+        <button id="btnAdmin" class="btn-accent">Admin kirish</button>
+      </div>
+    </header>
+
+    <section class="stats">
+      <div class="stat"><h3>Jami qarz</h3><div class="num" id="statJamiQarz">0</div></div>
+      <div class="stat"><h3>Qaytgan to'lov</h3><div class="num" id="statQaytganTolov">0</div></div>
+      <div class="stat"><h3>Qoldiq</h3><div class="num" id="statQoldiq">0</div></div>
+    </section>
+
+    <div class="card">
+      <div class="card-head">
+        <h2 style="margin-right:auto">Mijozlar</h2>
+        <div class="search">
+          <div class="field"><input id="searchInput" placeholder="Qidirish: ism, telefon..."></div>
+          <button id="btnAdd" class="btn-green">+ Mijoz qo'shish</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>#</th><th>Ism</th><th>Telefon</th><th>Qarz</th><th>To'lov</th><th>Qoldi</th><th>Amal</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="empty" class="empty" style="display:none">Hozircha ma'lumot yo'q</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Customer -->
+  <dialog id="dlgCustomer">
+    <div class="modal-head" id="dlgCustomerTitle">Mijoz</div>
+    <form method="dialog" id="frmCustomer">
+      <div class="modal-body">
+        <div class="grid-2">
+          <label class="field"> <input id="cName" required placeholder="Ism" /> </label>
+          <label class="field"> <input id="cPhone" placeholder="Telefon: +998..." /> </label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="btnCancelCustomer">Bekor</button>
+        <button type="submit" class="btn-green">Saqlash</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Add Transaction -->
+  <dialog id="dlgTxn">
+    <div class="modal-head">Yangi yozuv</div>
+    <form method="dialog" id="frmTxn">
+      <div class="modal-body">
+        <div class="grid-2">
+          <label class="field"> <input id="tAmount" type="number" required min="0" step="1000" placeholder="Miqdor" /> </label>
+          <label class="field"> <input id="tNote" placeholder="Izoh (ixtiyoriy)" /> </label>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="tQarz" type="button" class="btn btn-red btn-pill">QARZ</button>
+          <button id="tTolov" type="button" class="btn btn-green btn-pill">TO'LOV</button>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="btnCancelTxn">Bekor</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+  // ---- Data layer ----
+  const storeKey = "nasiya_customers_v1";
+  const $ = (s)=>document.querySelector(s);
+  const $$ = (s)=>Array.from(document.querySelectorAll(s));
+  const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
+
+  let customers = load();
+  function load(){ try{ return JSON.parse(localStorage.getItem(storeKey)) || []; }catch{ return []; } }
+  function save(){ localStorage.setItem(storeKey, JSON.stringify(customers)); }
+
+  function calc(c){
+    const qarz = (c.txns||[]).filter(x=>x.type==='qarz').reduce((a,b)=>a+Number(b.amount||0),0);
+    const tolov = (c.txns||[]).filter(x=>x.type==='tolov').reduce((a,b)=>a+Number(b.amount||0),0);
+    return {qarz, tolov, qoldiq: qarz - tolov};
+  }
+
+  function refresh(){
+    const q = $('#searchInput').value.trim().toLowerCase();
+    const tbody = $('#tbody'); tbody.innerHTML = '';
+    let filtered = customers.map(c=>({...c, ...calc(c)}));
+    if(q) filtered = filtered.filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q));
+    if(filtered.length===0){ $('#empty').style.display='block'; } else { $('#empty').style.display='none'; }
+    filtered.forEach((c, i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${c.name||''}</td>
+        <td><span class="chip">${c.phone||''}</span></td>
+        <td>${fmt(c.qarz)}</td>
+        <td>${fmt(c.tolov)}</td>
+        <td><strong>${fmt(c.qoldiq)}</strong></td>
+        <td class="row-actions">
+          <button class="btn-red btn-pill" data-act="qarz" data-id="${c.id}">Qarz</button>
+          <button class="btn-green btn-pill" data-act="tolov" data-id="${c.id}">To'lov</button>
+          <button class="btn" data-act="edit" data-id="${c.id}">Tahrirlash</button>
+          <button class="btn" data-act="del" data-id="${c.id}">O'chirish</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    // stats
+    const agg = filtered.reduce((a,c)=>{
+      a.qarz += c.qarz; a.tolov += c.tolov; return a;
+    }, {qarz:0, tolov:0});
+    $('#statJamiQarz').textContent = fmt(agg.qarz);
+    $('#statQaytganTolov').textContent = fmt(agg.tolov);
+    $('#statQoldiq').textContent = fmt(agg.qarz - agg.tolov);
+  }
+
+  // ---- UI handlers ----
+  $('#searchInput').addEventListener('input', refresh);
+
+  $('#btnAdd').addEventListener('click', ()=> openCustomer());
+  $('#btnExport').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(customers,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'nasiya-data.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  $('#fileImport').addEventListener('change', (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const r = new FileReader(); r.onload = ()=>{
+      try{ const data = JSON.parse(r.result); if(Array.isArray(data)){ customers = data; save(); refresh(); alert('Import qilindi ✅'); } else alert('Noto‘g‘ri fayl');}
+      catch{ alert('O‘qishda xatolik');}
+    }; r.readAsText(file);
+  });
+  $('#btnSeed').addEventListener('click', ()=>{
+    if(!confirm("Namuna ma'lumotlarini o'rnataymi?")) return;
+    customers = [
+      {id: crypto.randomUUID(), name:'Ali', phone:'+998 90 123 45 67', txns:[{type:'qarz',amount:120000, note:'trikotaj'},{type:'tolov',amount:50000}]},
+      {id: crypto.randomUUID(), name:'Zarina', phone:'+998 93 111 22 33', txns:[{type:'qarz',amount:80000}]},
+    ];
+    save(); refresh();
+  });
+
+  $('#btnAdmin').addEventListener('click', ()=> alert('Demo rejim: parol talab qilinmaydi.'));
+
+  // table actions
+  $('#tbody').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    const id = btn.dataset.id;
+    const act = btn.dataset.act;
+    const c = customers.find(x=>x.id===id);
+    if(!c) return;
+    if(act==='edit') openCustomer(c);
+    if(act==='del') { if(confirm('O‘chirishni tasdiqlang')){ customers = customers.filter(x=>x.id!==id); save(); refresh(); } }
+    if(act==='qarz' || act==='tolov') openTxn(c, act);
+  });
+
+  // ---- Customer modal ----
+  const dlgCustomer = $('#dlgCustomer');
+  $('#btnCancelCustomer').onclick = ()=> dlgCustomer.close();
+  function openCustomer(c){
+    $('#dlgCustomerTitle').textContent = c ? "Mijozni tahrirlash" : "Yangi mijoz";
+    $('#cName').value = c?.name || '';
+    $('#cPhone').value = c?.phone || '';
+    dlgCustomer.returnValue = 'cancel';
+    dlgCustomer.showModal();
+    $('#frmCustomer').onsubmit = (ev)=>{
+      ev.preventDefault();
+      const name = $('#cName').value.trim();
+      if(!name){ alert('Ism shart'); return; }
+      const phone = $('#cPhone').value.trim();
+      if(c){
+        c.name = name; c.phone = phone;
+      }else{
+        customers.push({id: crypto.randomUUID(), name, phone, txns:[]});
+      }
+      save(); refresh(); dlgCustomer.close();
+    };
+  }
+
+  // ---- Transaction modal ----
+  const dlgTxn = $('#dlgTxn');
+  $('#btnCancelTxn').onclick = ()=> dlgTxn.close();
+  function openTxn(c, preset){ // preset: 'qarz' | 'tolov'
+    $('#tAmount').value=''; $('#tNote').value='';
+    dlgTxn.showModal();
+    const commit = (type)=>{
+      const amount = Number($('#tAmount').value);
+      if(!amount){ alert('Miqdor kiriting'); return; }
+      c.txns = c.txns||[];
+      c.txns.push({type, amount, note: $('#tNote').value.trim(), ts: Date.now()});
+      save(); refresh(); dlgTxn.close();
+    };
+    $('#tQarz').onclick = ()=> commit('qarz');
+    $('#tTolov').onclick = ()=> commit('tolov');
+    if(preset==='qarz') $('#tQarz').focus();
+    if(preset==='tolov') $('#tTolov').focus();
+  }
+
+  // PWA
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=> navigator.serviceWorker.register('service-worker.js'));
+  }
+  refresh();
+  </script>
+</body>
+</html>

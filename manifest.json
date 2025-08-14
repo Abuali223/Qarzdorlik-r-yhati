@@ -1,0 +1,9 @@
+{
+  "name": "Nasiya & To'lovlar",
+  "short_name": "Nasiya",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0e1116",
+  "theme_color": "#0e1116",
+  "icons": []
+}
