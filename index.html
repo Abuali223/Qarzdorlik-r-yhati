@@ -59,25 +59,26 @@
     <table>
       <thead>
         <tr>
-          <th>#</th><th>Ism</th><th>Tovar</th><th>Narx</th><th>Berilgan</th><th>Qoldiq</th><th>Amal</th>
+          <th>#</th><th>Ism</th><th>Telefon</th><th>Tovar</th><th>Narx</th><th>Berilgan</th><th>Qoldiq</th><th>Amal</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
 
-  <!-- Mijoz qo'shish oynasi -->
-  <dialog id="dlgAdd">
-    <div class="modal-head">Mijoz ma’lumoti</div>
-    <form method="dialog" id="formAdd">
+  <!-- Mijoz qo'shish/tahrirlash oynasi -->
+  <dialog id="dlgAddEdit">
+    <div class="modal-head" id="dlgTitle">Mijoz ma’lumoti</div>
+    <form method="dialog" id="formAddEdit">
       <div class="modal-body">
         <label class="field"><input id="name" placeholder="Ism" required></label>
+        <label class="field"><input id="phone" placeholder="Telefon raqam"></label>
         <label class="field"><input id="qty" type="text" placeholder="Tovar soni"></label>
         <label class="field"><input id="price" type="text" placeholder="Tovar narxi"></label>
         <label class="field"><input id="given" type="text" placeholder="Berilgan summa"></label>
       </div>
       <div class="modal-foot">
-        <button type="button" onclick="dlgAdd.close()">Bekor</button>
+        <button type="button" onclick="dlgAddEdit.close()">Bekor</button>
         <button class="btn-green">Saqlash</button>
       </div>
     </form>
@@ -114,6 +115,7 @@
 <script>
 let data = [];
 let currentIndex = null;
+let editMode = false;
 const tbody = document.getElementById('tbody');
 const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
 
@@ -141,6 +143,7 @@ function refresh(){
       <tr>
         <td>${i+1}</td>
         <td>${c.name}</td>
+        <td>${c.phone || ''}</td>
         <td>${fmt(c.qty)}</td>
         <td>${fmt(c.price)}</td>
         <td>${fmt(c.given)}</td>
@@ -148,6 +151,7 @@ function refresh(){
         <td class="row-actions">
           <button class="btn-blue" onclick="openQarz(${i})">Qarz</button>
           <button class="btn-green" onclick="openTolov(${i})">To‘lov</button>
+          <button onclick="edit(${i})">Tahrirlash</button>
           <button class="btn-red" onclick="del(${i})">O‘chirish</button>
         </td>
       </tr>`;
@@ -162,23 +166,47 @@ function del(i){
 }
 
 document.getElementById('btnAdd').onclick = ()=>{
-  document.getElementById('formAdd').reset();
+  editMode = false;
+  document.getElementById('dlgTitle').textContent = "Mijoz qo‘shish";
+  document.getElementById('formAddEdit').reset();
   ['qty','price','given'].forEach(id=>{
     const el=document.getElementById(id);
     el.dataset.raw=''; el.value='';
   });
-  dlgAdd.showModal();
+  dlgAddEdit.showModal();
 };
 
-document.getElementById('formAdd').onsubmit = ()=>{
-  data.push({
+document.getElementById('formAddEdit').onsubmit = ()=>{
+  const client = {
     name: document.getElementById('name').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
     qty: getVal('qty'),
     price: getVal('price'),
     given: getVal('given')
-  });
+  };
+  if(editMode){
+    data[currentIndex] = client;
+  } else {
+    data.push(client);
+  }
   refresh();
 };
+
+function edit(i){
+  editMode = true;
+  currentIndex = i;
+  document.getElementById('dlgTitle').textContent = "Mijozni tahrirlash";
+  const c = data[i];
+  document.getElementById('name').value = c.name;
+  document.getElementById('phone').value = c.phone || '';
+  ['qty','price','given'].forEach((id,idx)=>{
+    const el=document.getElementById(id);
+    const val = idx===0?c.qty:idx===1?c.price:c.given;
+    el.dataset.raw = val;
+    el.value = fmt(val);
+  });
+  dlgAddEdit.showModal();
+}
 
 function openQarz(i){
   currentIndex = i;
