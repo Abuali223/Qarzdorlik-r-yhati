@@ -46,6 +46,10 @@
       <div class="brand">Qarzdorlik va To‘lovlar</div>
       <div class="toolbar">
         <button id="btnAdd" class="btn-green">+ Mijoz qo‘shish</button>
+        <button id="btnExport">Eksport</button>
+        <label class="btn">
+          Import <input id="fileImport" type="file" accept="application/json" hidden>
+        </label>
       </div>
     </header>
 
@@ -112,9 +116,17 @@
   </dialog>
 
 <script>
+/* ====== Saqlash/yuklash (localStorage) ====== */
+const STORAGE_KEY = 'qarz_tolov_app_v1';
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function load(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e){ return []; }
+}
+
 /* ====== Ma'lumot va yordamchilar ====== */
-let data = [];            // {name, phone, qty, price, given}
-let currentIndex = null;  // qaysi mijoz tanlangan
+let data = load();            // {name, phone, qty, price, given}
+let currentIndex = null;      // tanlangan mijoz
 let editMode = false;
 
 const tbody = document.getElementById('tbody');
@@ -138,7 +150,7 @@ function refresh(){
   let jamiQarz=0, jamiTolov=0, jamiQoldiq=0;
 
   data.forEach((c,i)=>{
-    const asosiy = c.qty*c.price;    // qty × price
+    const asosiy = c.qty*c.price;               // qty × price
     const qoldiq = Math.max(0, asosiy - c.given);
 
     jamiQarz  += asosiy;
@@ -185,8 +197,9 @@ document.getElementById('formAddEdit').onsubmit = ()=>{
     price: getVal('f_price'),
     given: getVal('f_given')
   };
-  if(editMode){ data[currentIndex] = client; } else { data.push(client); }
-  refresh();
+  if(editMode){ data[currentIndex] = client; }
+  else{ data.push(client); }
+  save(); refresh();
 };
 
 /* ====== Tahrirlash ====== */
@@ -196,13 +209,10 @@ function edit(i){
   const c = data[i];
   document.getElementById('f_name').value  = c.name;
   document.getElementById('f_phone').value = c.phone || '';
-
-  // Raqamli maydonlarni format bilan to'ldiramiz
   const setNum = (id,val)=>{ const el=document.getElementById(id); el.dataset.raw=String(val); el.value=fmt(val); };
   setNum('f_qty',  c.qty);
   setNum('f_price',c.price);
   setNum('f_given',c.given);
-
   dlgAddEdit.showModal();
 }
 
@@ -214,10 +224,9 @@ function openQarz(i){
 }
 document.getElementById('formQarz').onsubmit = ()=>{
   const summa = getVal('qarzSumma'); if(!summa) return;
-  // qarz miqdorini tovar qiymatiga qo'shamiz (qty = qty + qarz/price)
   const c = data[currentIndex];
-  if(c.price>0){ c.qty += (summa / c.price); }
-  refresh();
+  if(c.price>0){ c.qty += (summa / c.price); } // qarz miqdorini tovar qiymatiga qo'shamiz
+  save(); refresh();
 };
 
 function openTolov(i){
@@ -228,17 +237,38 @@ function openTolov(i){
 document.getElementById('formTolov').onsubmit = ()=>{
   const summa = getVal('tolovSumma'); if(!summa) return;
   data[currentIndex].given += summa;
-  refresh();
+  save(); refresh();
 };
 
 /* ====== O'chirish ====== */
-function delRow(i){ data.splice(i,1); refresh(); }
+function delRow(i){ data.splice(i,1); save(); refresh(); }
+
+/* ====== Import / Export ====== */
+document.getElementById('btnExport').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'qarz_tolov_backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById('fileImport').addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ try{
+      const d = JSON.parse(r.result);
+      if(Array.isArray(d)){ data = d; save(); refresh(); alert('Import muvaffaqiyatli ✅'); }
+      else alert('Fayl formati noto‘g‘ri');
+    }catch{ alert('Faylni o‘qishda xato'); } };
+  r.readAsText(f);
+});
 
 /* ====== Inputlarga formatlash hodisalari ====== */
 ['f_qty','f_price','f_given','qarzSumma','tolovSumma'].forEach(id=>{
   document.getElementById(id).addEventListener('input', fmtInput);
 });
 
+/* Boshlang'ich chizish */
 refresh();
 </script>
 </body>
