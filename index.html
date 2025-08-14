@@ -8,8 +8,7 @@
     :root{
       --bg:#0e1116; --panel:#151a22; --muted:#8a94a6; --text:#e6eefc;
       --accent:#4f8cff; --accent-2:#22c55e; --warn:#ef4444;
-      --border:#232936; --chip:#1d2430; --focus:0 0 0 3px rgba(79,140,255,.35);
-      --radius:12px;
+      --border:#232936; --chip:#1d2430; --radius:12px;
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);
@@ -32,7 +31,7 @@
     th,td{padding:10px;border-bottom:1px solid var(--border)}
     th{color:var(--muted);background:rgba(255,255,255,.02)}
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:500px;width:calc(100% - 24px)}
+    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:520px;width:calc(100% - 24px)}
     dialog::backdrop{background:rgba(0,0,0,.55)}
     .modal-head{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
     .modal-body{padding:16px;display:grid;gap:12px}
@@ -66,16 +65,16 @@
     </table>
   </div>
 
-  <!-- Mijoz qo'shish/tahrirlash oynasi -->
+  <!-- Qo'shish / Tahrirlash -->
   <dialog id="dlgAddEdit">
     <div class="modal-head" id="dlgTitle">Mijoz ma’lumoti</div>
     <form method="dialog" id="formAddEdit">
       <div class="modal-body">
-        <label class="field"><input id="name" placeholder="Ism" required></label>
-        <label class="field"><input id="phone" placeholder="Telefon raqam"></label>
-        <label class="field"><input id="qty" type="text" placeholder="Tovar soni"></label>
-        <label class="field"><input id="price" type="text" placeholder="Tovar narxi"></label>
-        <label class="field"><input id="given" type="text" placeholder="Berilgan summa"></label>
+        <label class="field"><input id="f_name" placeholder="Ism" required></label>
+        <label class="field"><input id="f_phone" placeholder="Telefon raqam (mas: 97 123 45 67)"></label>
+        <label class="field"><input id="f_qty" type="text" placeholder="Tovar soni"></label>
+        <label class="field"><input id="f_price" type="text" placeholder="Tovar narxi"></label>
+        <label class="field"><input id="f_given" type="text" placeholder="Berilgan summa"></label>
       </div>
       <div class="modal-foot">
         <button type="button" onclick="dlgAddEdit.close()">Bekor</button>
@@ -84,7 +83,7 @@
     </form>
   </dialog>
 
-  <!-- Qarz qo'shish oynasi -->
+  <!-- Qarz -->
   <dialog id="dlgQarz">
     <div class="modal-head">Qarz qo‘shish</div>
     <form method="dialog" id="formQarz">
@@ -98,7 +97,7 @@
     </form>
   </dialog>
 
-  <!-- To'lov kiritish oynasi -->
+  <!-- To'lov -->
   <dialog id="dlgTolov">
     <div class="modal-head">To‘lov kiritish</div>
     <form method="dialog" id="formTolov">
@@ -113,128 +112,134 @@
   </dialog>
 
 <script>
-let data = [];
-let currentIndex = null;
+/* ====== Ma'lumot va yordamchilar ====== */
+let data = [];            // {name, phone, qty, price, given}
+let currentIndex = null;  // qaysi mijoz tanlangan
 let editMode = false;
+
 const tbody = document.getElementById('tbody');
 const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
 
+/* Kiritishda formatlash (minglik ajratish) */
 function fmtInput(e){
-  let val = e.target.value.replace(/\s/g,'').replace(/,/g,'');
-  if(isNaN(val) || val === ''){ e.target.dataset.raw=''; e.target.value=''; return; }
+  let val = e.target.value.replace(/[^\d]/g,''); // faqat raqam
+  if(val===''){ e.target.dataset.raw=''; e.target.value=''; return; }
   e.target.dataset.raw = val;
   e.target.value = fmt(val);
 }
 function getVal(id){
   const el = document.getElementById(id);
-  return Number(el.dataset.raw || el.value.replace(/\s/g,'').replace(/,/g,'') || 0);
+  return Number(el.dataset.raw || el.value.replace(/[^\d]/g,'') || 0);
 }
 
+/* Jadvalni yangilash */
 function refresh(){
   tbody.innerHTML='';
   let jamiQarz=0, jamiTolov=0, jamiQoldiq=0;
+
   data.forEach((c,i)=>{
-    const asosiy = c.qty*c.price;
-    const qoldiq = asosiy - c.given;
-    jamiQarz += asosiy;
+    const asosiy = c.qty*c.price;    // qty × price
+    const qoldiq = Math.max(0, asosiy - c.given);
+
+    jamiQarz  += asosiy;
     jamiTolov += c.given;
-    jamiQoldiq += qoldiq;
-    tbody.innerHTML += `
+    jamiQoldiq+= qoldiq;
+
+    tbody.insertAdjacentHTML('beforeend', `
       <tr>
         <td>${i+1}</td>
         <td>${c.name}</td>
-        <td>${c.phone || ''}</td>
+        <td>${c.phone||''}</td>
         <td>${fmt(c.qty)}</td>
         <td>${fmt(c.price)}</td>
         <td>${fmt(c.given)}</td>
-        <td>${fmt(qoldiq)}</td>
+        <td><b>${fmt(qoldiq)}</b></td>
         <td class="row-actions">
-          <button class="btn-blue" onclick="openQarz(${i})">Qarz</button>
+          <button class="btn-blue"  onclick="openQarz(${i})">Qarz</button>
           <button class="btn-green" onclick="openTolov(${i})">To‘lov</button>
           <button onclick="edit(${i})">Tahrirlash</button>
-          <button class="btn-red" onclick="del(${i})">O‘chirish</button>
+          <button class="btn-red"  onclick="delRow(${i})">O‘chirish</button>
         </td>
-      </tr>`;
+      </tr>
+    `);
   });
-  document.getElementById('statQarz').textContent = fmt(jamiQarz);
-  document.getElementById('statTolov').textContent = fmt(jamiTolov);
+
+  document.getElementById('statQarz').textContent   = fmt(jamiQarz);
+  document.getElementById('statTolov').textContent  = fmt(jamiTolov);
   document.getElementById('statQoldiq').textContent = fmt(jamiQoldiq);
 }
-function del(i){
-  data.splice(i,1);
-  refresh();
-}
 
+/* ====== Qo'shish ====== */
 document.getElementById('btnAdd').onclick = ()=>{
   editMode = false;
   document.getElementById('dlgTitle').textContent = "Mijoz qo‘shish";
   document.getElementById('formAddEdit').reset();
-  ['qty','price','given'].forEach(id=>{
-    const el=document.getElementById(id);
-    el.dataset.raw=''; el.value='';
-  });
+  ['f_qty','f_price','f_given'].forEach(id=>{ const el=document.getElementById(id); el.dataset.raw=''; el.value=''; });
   dlgAddEdit.showModal();
 };
-
 document.getElementById('formAddEdit').onsubmit = ()=>{
   const client = {
-    name: document.getElementById('name').value.trim(),
-    phone: document.getElementById('phone').value.trim(),
-    qty: getVal('qty'),
-    price: getVal('price'),
-    given: getVal('given')
+    name : document.getElementById('f_name').value.trim(),
+    phone: document.getElementById('f_phone').value.trim(),
+    qty  : getVal('f_qty'),
+    price: getVal('f_price'),
+    given: getVal('f_given')
   };
-  if(editMode){
-    data[currentIndex] = client;
-  } else {
-    data.push(client);
-  }
+  if(editMode){ data[currentIndex] = client; } else { data.push(client); }
   refresh();
 };
 
+/* ====== Tahrirlash ====== */
 function edit(i){
-  editMode = true;
-  currentIndex = i;
+  editMode = true; currentIndex = i;
   document.getElementById('dlgTitle').textContent = "Mijozni tahrirlash";
   const c = data[i];
-  document.getElementById('name').value = c.name;
-  document.getElementById('phone').value = c.phone || '';
-  ['qty','price','given'].forEach((id,idx)=>{
-    const el=document.getElementById(id);
-    const val = idx===0?c.qty:idx===1?c.price:c.given;
-    el.dataset.raw = val;
-    el.value = fmt(val);
-  });
+  document.getElementById('f_name').value  = c.name;
+  document.getElementById('f_phone').value = c.phone || '';
+
+  // Raqamli maydonlarni format bilan to'ldiramiz
+  const setNum = (id,val)=>{ const el=document.getElementById(id); el.dataset.raw=String(val); el.value=fmt(val); };
+  setNum('f_qty',  c.qty);
+  setNum('f_price',c.price);
+  setNum('f_given',c.given);
+
   dlgAddEdit.showModal();
 }
 
+/* ====== Qarz / To'lov ====== */
 function openQarz(i){
   currentIndex = i;
-  document.getElementById('qarzSumma').value='';
-  document.getElementById('qarzSumma').dataset.raw='';
+  const el = document.getElementById('qarzSumma'); el.value=''; el.dataset.raw='';
   dlgQarz.showModal();
 }
 document.getElementById('formQarz').onsubmit = ()=>{
-  const summa = getVal('qarzSumma');
-  data[currentIndex].qty += summa / data[currentIndex].price;
+  const summa = getVal('qarzSumma'); if(!summa) return;
+  // qarz miqdorini tovar qiymatiga qo'shamiz (qty = qty + qarz/price)
+  const c = data[currentIndex];
+  if(c.price>0){ c.qty += (summa / c.price); }
   refresh();
 };
 
 function openTolov(i){
   currentIndex = i;
-  document.getElementById('tolovSumma').value='';
-  document.getElementById('tolovSumma').dataset.raw='';
+  const el = document.getElementById('tolovSumma'); el.value=''; el.dataset.raw='';
   dlgTolov.showModal();
 }
 document.getElementById('formTolov').onsubmit = ()=>{
-  const summa = getVal('tolovSumma');
+  const summa = getVal('tolovSumma'); if(!summa) return;
   data[currentIndex].given += summa;
   refresh();
 };
 
-['qty','price','given','qarzSumma','tolovSumma'].forEach(id=>{
+/* ====== O'chirish ====== */
+function delRow(i){ data.splice(i,1); refresh(); }
+
+/* ====== Inputlarga formatlash hodisalari ====== */
+['f_qty','f_price','f_given','qarzSumma','tolovSumma'].forEach(id=>{
   document.getElementById(id).addEventListener('input', fmtInput);
 });
+
+refresh();
 </script>
 </body>
 </html>
