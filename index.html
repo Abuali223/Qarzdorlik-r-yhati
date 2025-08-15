@@ -44,10 +44,8 @@
     #histForm{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px}
     #histForm .field{min-width:140px}
     #histForm textarea{resize:vertical}
-    /* Qarz dialogini ham shu ohangda, lekin kengaytirilgan maydonlar bilan */
-    #dlgQarz{max-width:720px}
-    #qarzForm{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px}
-    #qarzForm .field{min-width:140px}
+    /* Qarz/Tovar dialogi uchun kengaytirilgan maydonlar */
+    #dlgQarz,#dlgTovar{max-width:720px}
   </style>
 </head>
 <body>
@@ -99,13 +97,13 @@
     </form>
   </dialog>
 
-  <!-- Qarz (kengaytirilgan: Tarixga yozadi) -->
+  <!-- Qarz (Tarixga yozadi) -->
   <dialog id="dlgQarz">
     <div class="modal-head">Qarz qo‘shish</div>
     <form method="dialog" id="qarzForm">
-      <div class="modal-body">
+      <div class="modal-body" style="gap:12px">
         <div id="qarzWho" style="opacity:.8"></div>
-        <div id="qarzForm" class="modal-body" style="padding:0">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px">
           <label class="field"><input id="q_date" type="date" required></label>
           <label class="field"><input id="q_item" placeholder="Tovar nomi" required></label>
           <label class="field"><input id="q_qty"  type="text" placeholder="Miqdor (dona)" required></label>
@@ -160,6 +158,27 @@
     <div class="modal-foot">
       <button type="button" onclick="dlgHistory.close()">Yopish</button>
     </div>
+  </dialog>
+
+  <!-- TOVAR (alohida tugma orqali) -->
+  <dialog id="dlgTovar">
+    <div class="modal-head">Tovar qo‘shish</div>
+    <form method="dialog" id="tovarForm">
+      <div class="modal-body" style="gap:12px">
+        <div id="tovarWho" style="opacity:.8"></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px">
+          <label class="field"><input id="t_date"  type="date" required></label>
+          <label class="field"><input id="t_item"  placeholder="Tovar nomi" required></label>
+          <label class="field"><input id="t_qty"   type="text" placeholder="Miqdor (dona)" required></label>
+          <label class="field"><input id="t_price" type="text" placeholder="Narx (1 dona)" required></label>
+          <label class="field" style="grid-column: span 2"><input id="t_note" placeholder="Izoh (ixtiyoriy)"></label>
+          <button class="btn-blue" type="submit">Saqlash</button>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" onclick="dlgTovar.close()">Yopish</button>
+      </div>
+    </form>
   </dialog>
 
 <script>
@@ -235,6 +254,7 @@ function refresh(){
         <td>${fmt(t.given)}</td>
         <td><b>${fmt(t.remain)}</b></td>
         <td class="row-actions">
+          <button class="btn-blue"  onclick="openTovar(${i})">Tovar</button>
           <button class="btn-blue"  onclick="openQarz(${i})">Qarz</button>
           <button class="btn-green" onclick="openTolov(${i})">To‘lov</button>
           <button onclick="openHistory(${i})">Tarix</button>
@@ -289,12 +309,9 @@ function edit(i){
 function openQarz(i){
   currentIndex = i;
   const c = data[i];
-  // kim uchun
   document.getElementById('qarzWho').textContent = `${c.name||''} — ${c.phone||''}`;
-  // sana = bugungi
   const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
   document.getElementById('q_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  // formani tozalash
   ['q_item','q_qty','q_price','q_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
   dlgQarz.showModal();
 }
@@ -310,8 +327,7 @@ document.getElementById('qarzForm').addEventListener('submit', (e)=>{
     note : document.getElementById('q_note').value.trim()
   };
   if(!rec.date || !rec.item || !rec.qty || !rec.price){
-    alert('Sana, tovar, miqdor va narx majburiy.');
-    return;
+    alert('Sana, tovar, miqdor va narx majburiy.'); return;
   }
   c.history.push(rec);
   save(); refresh();
@@ -382,6 +398,37 @@ document.getElementById('histForm').addEventListener('submit', (e)=>{
   renderHistoryList(); refresh();
 });
 
+/* ====== TOVAR (alohida tugma) ====== */
+function openTovar(i){
+  currentIndex = i;
+  const c = data[i];
+  document.getElementById('tovarWho').textContent = `${c.name||''} — ${c.phone||''}`;
+  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
+  document.getElementById('t_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
+  ['t_item','t_qty','t_price','t_note'].forEach(id=>{
+    const el=document.getElementById(id); el.value=''; el.dataset.raw='';
+  });
+  dlgTovar.showModal();
+}
+document.getElementById('tovarForm').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const c = data[currentIndex];
+  if(!Array.isArray(c.history)) c.history = [];
+  const rec = {
+    date : document.getElementById('t_date').value,
+    item : document.getElementById('t_item').value.trim(),
+    qty  : getVal('t_qty'),
+    price: getVal('t_price'),
+    note : document.getElementById('t_note').value.trim()
+  };
+  if(!rec.date || !rec.item || !rec.qty || !rec.price){
+    alert('Sana, tovar, miqdor va narx majburiy.'); return;
+  }
+  c.history.push(rec);
+  save(); refresh();
+  dlgTovar.close();
+});
+
 /* ====== O'chirish ====== */
 function delRow(i){ data.splice(i,1); save(); refresh(); }
 
@@ -406,7 +453,7 @@ document.getElementById('fileImport').addEventListener('change', (e)=>{
 });
 
 /* ====== Raqamli inputlarni formatlash ====== */
-['f_qty','f_price','f_given','tolovSumma','h_qty','h_price','q_qty','q_price'].forEach(id=>{
+['f_qty','f_price','f_given','tolovSumma','h_qty','h_price','q_qty','q_price','t_qty','t_price'].forEach(id=>{
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', fmtInput);
 });
