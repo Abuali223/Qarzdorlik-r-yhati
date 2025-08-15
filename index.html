@@ -24,30 +24,19 @@
     .btn-blue{background:#112033;color:#cde4ff}
     .btn-red{background:#2a1010;color:#ffd0d0}
 
-    /* RESPONSIVE stats */
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:12px;margin:12px 0 20px
-    }
-    @media (max-width:1024px){
-      .stats{ grid-template-columns:repeat(2,1fr); }
-    }
-    @media (max-width:560px){
-      .stats{ grid-template-columns:1fr; }
-    }
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 20px}
+    @media (max-width:1024px){ .stats{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:560px){ .stats{grid-template-columns:1fr} }
     .stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
     .stat h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
     .stat .num{font-size:22px;font-weight:700}
 
-    /* Jadval wrap — mobil scroll */
     .table-wrap{width:100%;overflow:auto;border-radius:10px}
     table{width:100%;border-collapse:collapse;min-width:860px}
     th,td{padding:10px;border-bottom:1px solid var(--border)}
     th{color:var(--muted);background:rgba(255,255,255,.02)}
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 
-    /* Dialoglar moslashuvchan */
     dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);
            padding:0;max-width:980px;width:calc(100% - 24px)}
     dialog::backdrop{background:rgba(0,0,0,.55)}
@@ -478,30 +467,88 @@ document.getElementById('btnExport').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup.json'; a.click(); URL.revokeObjectURL(a.href);
 };
 
-/* === IMPort (eski 'data' va yangi 'clients' ni qo'llab-quvvatlash) === */
-document.getElementById('fileImport').addEventListener('change',(e)=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{ try{
-    const d=JSON.parse(r.result);
-    const importedClients  = Array.isArray(d.clients) ? d.clients
-                           : Array.isArray(d.data)    ? d.data
-                           : null;
-    const importedExpenses = Array.isArray(d.expenses) ? d.expenses : null;
+/* ------------ TURli FORMATlarni o'qiYDigAN IMPORT ------------ */
+/* (qo'shimcha yordamchi funksiyalar) */
+function pick(obj, keys){
+  for(const k of keys){ if(obj!=null && obj[k] != null) return obj[k]; }
+  return undefined;
+}
+function nnum(v){
+  if (typeof v === 'number') return v;
+  if (v == null) return 0;
+  const s = String(v).replace(',', '.').replace(/[^0-9.\-]/g,'');
+  const p = s.split('.');
+  return parseFloat(p.length>2 ? (p[0]+'.'+p.slice(1).join('')) : s) || 0;
+}
+function normalizeClients(arr){
+  if(!Array.isArray(arr)) return [];
+  return arr.map(x=>{
+    const historyRaw = pick(x, ['history','tarix','purchases','records','xaridlar']) || [];
+    const hist = Array.isArray(historyRaw) ? historyRaw.map(h=>({
+      date: pick(h, ['date','sana']) || '',
+      item: pick(h, ['item','tovar','nomi','name']) || '',
+      qty : nnum(pick(h, ['qty','miqdor','son','amount','quantity'])),
+      price: nnum(pick(h, ['price','narx','unitPrice'])),
+      note: pick(h, ['note','izoh','comment']) || ''
+    })) : [];
+    return {
+      name : pick(x, ['name','ism','fullName']) || '',
+      phone: pick(x, ['phone','telefon','tel']) || '',
+      qty  : nnum(pick(x, ['qty','miqdor','son','count','quantity'])),
+      price: nnum(pick(x, ['price','narx','unitPrice'])),
+      given: nnum(pick(x, ['given','paid','tolov','berilgan','pay'])),
+      history: hist
+    };
+  });
+}
+function normalizeExpenses(arr){
+  if(!Array.isArray(arr)) return [];
+  return arr.map(x=>({
+    date  : pick(x, ['date','sana']) || '',
+    type  : pick(x, ['type','tur','category']) || '',
+    amount: nnum(pick(x, ['amount','sum','summ','price','summa','miqdor'])),
+    note  : pick(x, ['note','izoh','comment']) || ''
+  }));
+}
 
-    if(!importedClients && !importedExpenses){
-      alert('Fayl formati mos emas. Kerakli kalitlar: "clients" yoki "data", hamda "expenses".');
-      return;
+/* Import handler (ko'p formatli) */
+document.getElementById('fileImport').addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const d = JSON.parse(r.result);
+
+      // Mijozlar manbaini aniqlash
+      let rawClients =
+          Array.isArray(d?.clients)     ? d.clients  :
+          Array.isArray(d?.data)        ? d.data     :
+          Array.isArray(d)              ? d          :  // top-level massiv
+          null;
+
+      // Harajatlar manbai (bo'lmasa ham mayli)
+      let rawExpenses =
+          Array.isArray(d?.expenses)    ? d.expenses :
+          Array.isArray(d?.harajatlar)  ? d.harajatlar :
+          null;
+
+      if(!rawClients && !rawExpenses){
+        alert('Fayl formati mos emas. Mijozlar yoki harajatlar ro‘yxati topilmadi.');
+        return;
+      }
+
+      if(rawClients)  data     = normalizeClients(rawClients);
+      if(rawExpenses) expenses = normalizeExpenses(rawExpenses);
+
+      saveClients(); saveExpenses(); refresh();
+
+      const cCount = data?.length || 0;
+      const eCount = expenses?.length || 0;
+      alert(`Import muvaffaqiyatli ✅\nMijozlar: ${cCount}\nHarajatlar: ${eCount}`);
+    }catch(err){
+      alert('Faylni o‘qishda xato (JSON).');
     }
-    if(importedClients)  data     = importedClients;
-    if(importedExpenses) expenses = importedExpenses;
-
-    saveClients(); saveExpenses(); refresh();
-
-    const cCount = data?.length || 0;
-    const eCount = expenses?.length || 0;
-    alert(`Import muvaffaqiyatli ✅\nMijozlar: ${cCount}\nHarajatlar: ${eCount}`);
-  }catch{ alert('Faylni o‘qishda xato'); } };
+  };
   r.readAsText(f);
 });
 
