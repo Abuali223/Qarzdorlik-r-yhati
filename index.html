@@ -38,12 +38,16 @@
     .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
     .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
     .field input, .field textarea{background:transparent;border:0;outline:0;color:var(--text);width:100%}
-    /* Tarix dialogi jadvali uchun biroz joylashuv (dizayn ranglarini o‘zgartirmaydi) */
+    /* Tarix dialogi uchun kengroq jadval joylashuvi */
     #dlgHistory{max-width:920px}
     #histTable th,#histTable td{border-bottom:1px solid var(--border);padding:8px 10px}
     #histForm{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px}
     #histForm .field{min-width:140px}
     #histForm textarea{resize:vertical}
+    /* Qarz dialogini ham shu ohangda, lekin kengaytirilgan maydonlar bilan */
+    #dlgQarz{max-width:720px}
+    #qarzForm{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px}
+    #qarzForm .field{min-width:140px}
   </style>
 </head>
 <body>
@@ -95,16 +99,23 @@
     </form>
   </dialog>
 
-  <!-- Qarz -->
+  <!-- Qarz (kengaytirilgan: Tarixga yozadi) -->
   <dialog id="dlgQarz">
     <div class="modal-head">Qarz qo‘shish</div>
-    <form method="dialog" id="formQarz">
+    <form method="dialog" id="qarzForm">
       <div class="modal-body">
-        <label class="field"><input id="qarzSumma" type="text" placeholder="Qarz summa"></label>
+        <div id="qarzWho" style="opacity:.8"></div>
+        <div id="qarzForm" class="modal-body" style="padding:0">
+          <label class="field"><input id="q_date" type="date" required></label>
+          <label class="field"><input id="q_item" placeholder="Tovar nomi" required></label>
+          <label class="field"><input id="q_qty"  type="text" placeholder="Miqdor (dona)" required></label>
+          <label class="field"><input id="q_price" type="text" placeholder="Narx (1 dona)" required></label>
+          <label class="field" style="grid-column: span 2"><input id="q_note" placeholder="Izoh (ixtiyoriy)"></label>
+          <button class="btn-blue" type="submit">Tasdiqlash</button>
+        </div>
       </div>
       <div class="modal-foot">
         <button type="button" onclick="dlgQarz.close()">Bekor</button>
-        <button class="btn-blue">Tasdiqlash</button>
       </div>
     </form>
   </dialog>
@@ -162,9 +173,9 @@ function load(){
 
 /* ====== Ma'lumot va yordamchilar ====== */
 let data = load();            // {name, phone, qty, price, given, history[]}
-let currentIndex = null;      // tanlangan mijoz (jadval/qarz/to'lov)
-let editMode = false;         // mijoz tahrir rejimi
-let histIndex = null;         // tarix uchun tanlangan mijoz
+let currentIndex = null;      // umumiy tanlov
+let editMode = false;         // tahrir rejimi
+let histIndex = null;         // tarix/mijoz
 
 const tbody = document.getElementById('tbody');
 const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
@@ -180,7 +191,7 @@ function getVal(id){
   return Number(el.dataset.raw || el.value.replace(/[^\d]/g,'') || 0);
 }
 
-/* ====== Yangi: Mijoz bo'yicha umumiy hisob (tarix bilan) ====== */
+/* ====== Umumiy hisob (tarix bilan) ====== */
 function totalsForClient(c){
   const baseQty   = Number(c.qty || 0);
   const basePrice = Number(c.price || 0);
@@ -239,7 +250,7 @@ function refresh(){
   document.getElementById('statQoldiq').textContent = fmt(jamiQoldiq);
 }
 
-/* ====== Qo'shish ====== */
+/* ====== Mijoz qo'shish / tahrirlash ====== */
 document.getElementById('btnAdd').onclick = ()=>{
   editMode = false;
   document.getElementById('dlgTitle').textContent = "Mijoz qo‘shish";
@@ -261,7 +272,6 @@ document.getElementById('formAddEdit').onsubmit = ()=>{
   save(); refresh();
 };
 
-/* ====== Tahrirlash ====== */
 function edit(i){
   editMode = true; currentIndex = i;
   document.getElementById('dlgTitle').textContent = "Mijozni tahrirlash";
@@ -275,29 +285,40 @@ function edit(i){
   dlgAddEdit.showModal();
 }
 
-/* ====== Qarz / To'lov ====== */
+/* ====== Qarz — bevosita Tarixga yoziladi ====== */
 function openQarz(i){
   currentIndex = i;
-  const el = document.getElementById('qarzSumma'); el.value=''; el.dataset.raw='';
+  const c = data[i];
+  // kim uchun
+  document.getElementById('qarzWho').textContent = `${c.name||''} — ${c.phone||''}`;
+  // sana = bugungi
+  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
+  document.getElementById('q_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
+  // formani tozalash
+  ['q_item','q_qty','q_price','q_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
   dlgQarz.showModal();
 }
-document.getElementById('formQarz').onsubmit = ()=>{
-  const summa = getVal('qarzSumma'); if(!summa) return;
+document.getElementById('qarzForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
   const c = data[currentIndex];
-  if(Number(c.price)>0){
-    // Avvalgi mantiq: qarz summasi bo‘yicha qty ni oshirish
-    c.qty = Number(c.qty||0) + (summa / Number(c.price||1));
-  } else {
-    // Agar bazaviy narx yo‘q bo‘lsa, uni 1 dona narx deb qabul qilolmaymiz – tarixga bir dona yozamiz
-    (c.history ||= []).push({
-      date: new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10),
-      item: 'Qarz (narx aniqlanmagan)',
-      qty: 1, price: summa, note: ''
-    });
+  if(!Array.isArray(c.history)) c.history = [];
+  const rec = {
+    date : document.getElementById('q_date').value,
+    item : document.getElementById('q_item').value.trim(),
+    qty  : getVal('q_qty'),
+    price: getVal('q_price'),
+    note : document.getElementById('q_note').value.trim()
+  };
+  if(!rec.date || !rec.item || !rec.qty || !rec.price){
+    alert('Sana, tovar, miqdor va narx majburiy.');
+    return;
   }
+  c.history.push(rec);
   save(); refresh();
-};
+  dlgQarz.close();
+});
 
+/* ====== To'lov ====== */
 function openTolov(i){
   currentIndex = i;
   const el = document.getElementById('tolovSumma'); el.value=''; el.dataset.raw='';
@@ -361,11 +382,6 @@ document.getElementById('histForm').addEventListener('submit', (e)=>{
   renderHistoryList(); refresh();
 });
 
-// Tarix raqamli inputlarini formatlash
-['h_qty','h_price'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', fmtInput);
-});
-
 /* ====== O'chirish ====== */
 function delRow(i){ data.splice(i,1); save(); refresh(); }
 
@@ -389,9 +405,10 @@ document.getElementById('fileImport').addEventListener('change', (e)=>{
   r.readAsText(f);
 });
 
-/* ====== Input formatlash hodisalari ====== */
-['f_qty','f_price','f_given','qarzSumma','tolovSumma'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', fmtInput);
+/* ====== Raqamli inputlarni formatlash ====== */
+['f_qty','f_price','f_given','tolovSumma','h_qty','h_price','q_qty','q_price'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', fmtInput);
 });
 
 /* Boshlang'ich chizish */
