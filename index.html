@@ -38,12 +38,14 @@
     .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
     .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
     .field input, .field textarea{background:transparent;border:0;outline:0;color:var(--text);width:100%}
+
+    /* Tarix va Harajatlar oynalari uchun kengroq */
     #dlgHistory{max-width:920px}
     #histTable th,#histTable td{border-bottom:1px solid var(--border);padding:8px 10px}
+    #dlgExpenses{max-width:980px}
+    #expTable th,#expTable td{border-bottom:1px solid var(--border);padding:8px 10px}
+    #expForm{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px}
   </style>
-  <!-- Ixtiyoriy: Google API (Sheets sinxron uchun) -->
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="container">
@@ -55,10 +57,8 @@
         <label class="btn">
           Import <input id="fileImport" type="file" accept="application/json" hidden>
         </label>
-        <!-- Ixtiyoriy Google Sheets tugmalari -->
-        <button id="btnGoogle" class="btn-blue" title="Google bilan ulash">Google bilan ulash</button>
-        <button id="btnCloudSave" title="Bulutga saqlash">Bulutga saqlash</button>
-        <button id="btnCloudLoad" title="Bulutdan yuklash">Bulutdan yuklash</button>
+        <!-- Admin uchun -->
+        <button id="btnExpenses" class="btn-blue" title="Harajatlar (admin)">Harajatlar</button>
       </div>
     </header>
 
@@ -98,23 +98,16 @@
     </form>
   </dialog>
 
-  <!-- Qarz (Tarixga yozadi) -->
+  <!-- Qarz -->
   <dialog id="dlgQarz">
     <div class="modal-head">Qarz qo‘shish</div>
-    <form method="dialog" id="qarzForm">
-      <div class="modal-body" style="gap:12px">
-        <div id="qarzWho" style="opacity:.8"></div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px">
-          <label class="field"><input id="q_date" type="date" required></label>
-          <label class="field"><input id="q_item" placeholder="Tovar nomi" required></label>
-          <label class="field"><input id="q_qty"  type="text" placeholder="Miqdor (dona)" required></label>
-          <label class="field"><input id="q_price" type="text" placeholder="Narx (1 dona)" required></label>
-          <label class="field" style="grid-column: span 2"><input id="q_note" placeholder="Izoh (ixtiyoriy)"></label>
-          <button class="btn-blue" type="submit">Tasdiqlash</button>
-        </div>
+    <form method="dialog" id="formQarz">
+      <div class="modal-body">
+        <label class="field"><input id="qarzSumma" type="text" placeholder="Qarz summa"></label>
       </div>
       <div class="modal-foot">
         <button type="button" onclick="dlgQarz.close()">Bekor</button>
+        <button class="btn-blue">Tasdiqlash</button>
       </div>
     </form>
   </dialog>
@@ -133,7 +126,7 @@
     </form>
   </dialog>
 
-  <!-- TARIX -->
+  <!-- TARIX (mijoz xaridlari) -->
   <dialog id="dlgHistory">
     <div class="modal-head">Xaridlar tarixi</div>
     <div class="modal-body" style="gap:14px">
@@ -182,77 +175,108 @@
     </form>
   </dialog>
 
+  <!-- ADMIN: PIN kirish -->
+  <dialog id="dlgAdminPin">
+    <div class="modal-head">Admin kirish</div>
+    <form method="dialog" id="formAdminPin">
+      <div class="modal-body">
+        <div class="field"><input id="adminPinInput" type="password" placeholder="PIN"></div>
+        <small style="color:var(--muted)">Bir marta o‘rnatib olgan PIN’ni bu yerda kiriting.</small>
+      </div>
+      <div class="modal-foot">
+        <button type="button" onclick="dlgAdminPin.close()">Bekor</button>
+        <button class="btn-blue">Kirish</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ADMIN: PIN o‘rnatish (agar yo‘q bo‘lsa) -->
+  <dialog id="dlgSetPin">
+    <div class="modal-head">Admin PIN o‘rnatish</div>
+    <form method="dialog" id="formSetPin">
+      <div class="modal-body">
+        <div class="field"><input id="pin1" type="password" placeholder="PIN (kamida 4 belgi)" required></div>
+        <div class="field"><input id="pin2" type="password" placeholder="PIN takror" required></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" onclick="dlgSetPin.close()">Bekor</button>
+        <button class="btn-green">Saqlash</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ADMIN: Harajatlar -->
+  <dialog id="dlgExpenses">
+    <div class="modal-head">Harajatlar (faqat admin)</div>
+    <div class="modal-body" style="gap:14px">
+      <form id="expForm">
+        <label class="field"><input id="e_date" type="date" required></label>
+        <label class="field"><input id="e_type" placeholder="Tur (mas: transport)" required></label>
+        <label class="field"><input id="e_amount" type="text" placeholder="Summasi" required></label>
+        <label class="field" style="grid-column: span 2"><input id="e_note" placeholder="Izoh (ixtiyoriy)"></label>
+        <button class="btn-green" type="submit">Qo‘shish</button>
+      </form>
+
+      <div style="overflow:auto">
+        <table id="expTable" style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr><th>Sana</th><th>Tur</th><th>Summasi</th><th>Izoh</th><th>Amal</th></tr>
+          </thead>
+          <tbody id="expTbody"></tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div><b>Jami harajat:</b> <span id="expTotal">0</span></div>
+        <div style="display:flex;gap:8px">
+          <button id="btnExpExport">Eksport</button>
+          <label class="btn">Import <input id="fileExpImport" type="file" accept="application/json" hidden></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" onclick="dlgExpenses.close()">Yopish</button>
+    </div>
+  </dialog>
+
 <script>
-/* ====== (Ixtiyoriy) Google Sheets sozlamalari ====== */
-const CLIENT_ID = 'PASTE_YOUR_OAUTH_CLIENT_ID.apps.googleusercontent.com';
-const API_KEY = 'PASTE_YOUR_API_KEY';
-const SPREADSHEET_ID = 'PASTE_YOUR_SPREADSHEET_ID';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-const DISCOVERY_DOCS = ['https://sheets.googleapis.com/$discovery/rest?version=v4'];
-
 /* ====== Saqlash/yuklash (localStorage) ====== */
-const STORAGE_KEY = 'qarz_tolov_app_v2';
-function saveLocal(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-function loadLocal(){
-  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch(e){ return []; }
-}
+const STORAGE_KEY = 'qarz_tolov_app_v3';
+const EXP_KEY     = 'qarz_expenses_v1';
+const PIN_KEY     = 'qarz_admin_pin_v1';
 
-/* ====== Ma'lumot va yordamchilar ====== */
-let data = loadLocal();            // {id?, name, phone, qty, price, given, history[]}
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ return []; } }
+
+function saveExp(){ localStorage.setItem(EXP_KEY, JSON.stringify(expenses)); }
+function loadExp(){ try{ return JSON.parse(localStorage.getItem(EXP_KEY)) || []; } catch(e){ return []; } }
+
+function getPin(){ return localStorage.getItem(PIN_KEY) || ''; }
+function setPin(p){ localStorage.setItem(PIN_KEY, p); }
+
+/* ====== Ma'lumotlar ====== */
+let data = load();                  // mijozlar
+let expenses = loadExp();           // harajatlar [{date,type,amount,note}]
 let currentIndex = null;
 let editMode = false;
 let histIndex = null;
 
 const tbody = document.getElementById('tbody');
 const fmt = (n)=> Number(n||0).toLocaleString('uz-UZ', {maximumFractionDigits: 3});
-const uid = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4);
+const parseNum = (v)=>{ const s=String(v??'').replace(',', '.').replace(/[^0-9.]/g,''); if(!s) return 0; const p=s.split('.'); const n=parseFloat(p.length>2?p[0]+'.'+p.slice(1).join(''):s); return isNaN(n)?0:n; };
 
-// Kasrli parse (vergulni nuqtaga o‘giradi)
-function parseNum(v){
-  if(v==null) return 0;
-  if(typeof v === 'number') return v;
-  const s = String(v).replace(',', '.').replace(/[^0-9.]/g,'');
-  if(s==='') return 0;
-  const parts = s.split('.');
-  const normalized = (parts.length>2) ? (parts[0]+'.'+parts.slice(1).join('')) : s;
-  const num = parseFloat(normalized);
-  return isNaN(num) ? 0 : num;
-}
-
-/* === KIRITISHDA FORMATLASH (kasrga ruxsat) === */
+/* Kasr son kiritish va formatlash */
 function fmtInput(e){
-  // 1) Vergul -> nuqta, boshqa belgilarni olib tashlash
-  let raw = e.target.value.replace(',', '.').replace(/[^0-9.]/g,'');
-  // 2) Ikki va undan ko‘p nuqtani bitta qilish
-  const parts = raw.split('.');
-  if(parts.length > 2) raw = parts[0] + '.' + parts.slice(1).join('');
-
-  if(raw === ''){
-    e.target.dataset.raw = '';
-    e.target.value = '';
-    return;
-  }
-
-  // dataset.raw ga real raqamni yozamiz
-  const num = parseFloat(raw);
-  e.target.dataset.raw = isNaN(num) ? '' : String(num);
-
-  // Ko‘rsatish: agar kasr bo‘lsa — foydalanuvchi kiritgan ko‘rinishda qoldiramiz,
-  // agar butun bo‘lsa — minglik bilan formatlaymiz.
-  if(raw.includes('.')){
-    e.target.value = raw; // masalan 1.5
-  }else{
-    e.target.value = fmt(raw);
-  }
+  let val = e.target.value.replace(',', '.').replace(/[^0-9.]/g,'');
+  const parts = val.split('.');
+  if(parts.length > 2){ val = parts[0] + '.' + parts.slice(1).join(''); }
+  if(val === ''){ e.target.dataset.raw = ''; e.target.value = ''; return; }
+  e.target.dataset.raw = parseFloat(val) || 0;
+  e.target.value = val.includes('.') ? val : fmt(val);
 }
 function getVal(id){
   const el = document.getElementById(id);
-  if(!el) return 0;
-  if(el.dataset && el.dataset.raw !== undefined && el.dataset.raw !== ''){
-    return parseNum(el.dataset.raw);
-  }
-  return parseNum(el.value);
+  return parseNum(el.dataset?.raw ?? el.value);
 }
 
 /* ====== Umumiy hisob (tarix bilan) ====== */
@@ -282,7 +306,6 @@ function refresh(){
   let jamiQarz=0, jamiTolov=0, jamiQoldiq=0;
 
   data.forEach((c,i)=>{
-    if(!c.id) c.id = uid();
     const t = totalsForClient(c);
 
     jamiQarz  += t.totalDebt;
@@ -321,22 +344,21 @@ document.getElementById('btnAdd').onclick = ()=>{
   editMode = false;
   document.getElementById('dlgTitle').textContent = "Mijoz qo‘shish";
   document.getElementById('formAddEdit').reset();
-  ['f_qty','f_price','f_given'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.dataset.raw=''; el.value=''; });
+  ['f_qty','f_price','f_given'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.dataset.raw=''; el.value=''; }});
   dlgAddEdit.showModal();
 };
 document.getElementById('formAddEdit').onsubmit = ()=>{
   const client = {
-    id   : editMode ? (data[currentIndex]?.id || uid()) : uid(),
     name : document.getElementById('f_name').value.trim(),
     phone: document.getElementById('f_phone').value.trim(),
     qty  : getVal('f_qty'),
     price: getVal('f_price'),
     given: getVal('f_given'),
-    history: (editMode && Array.isArray(data[currentIndex]?.history)) ? data[currentIndex].history : []
+    history: Array.isArray(data[currentIndex]?.history) && editMode ? data[currentIndex].history : []
   };
   if(editMode){ data[currentIndex] = client; }
   else{ data.push(client); }
-  saveLocal(); queueCloudSave(); refresh();
+  save(); refresh();
 };
 
 function edit(i){
@@ -346,10 +368,7 @@ function edit(i){
   document.getElementById('f_name').value  = c.name||'';
   document.getElementById('f_phone').value = c.phone || '';
   const setNum = (id,val)=>{ const el=document.getElementById(id); if(!el) return;
-    const n = parseNum(val);
-    el.dataset.raw= String(n);
-    // Kasr bo‘lsa raw ko‘rinishda, butun bo‘lsa minglik bilan
-    el.value = (String(n).includes('.')) ? String(n) : fmt(n);
+    const n = parseNum(val); el.dataset.raw=String(n); el.value = String(n).includes('.') ? String(n) : fmt(n);
   };
   setNum('f_qty',  c.qty);
   setNum('f_price',c.price);
@@ -360,41 +379,25 @@ function edit(i){
 /* ====== Qarz / To'lov / Tovar ====== */
 function openQarz(i){
   currentIndex = i;
-  const c = data[i];
-  document.getElementById('qarzWho').textContent = `${c.name||''} — ${c.phone||''}`;
-  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
-  document.getElementById('q_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  ['q_item','q_qty','q_price','q_note'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.dataset.raw=''; el.value=''; });
+  const el = document.getElementById('qarzSumma'); el.value=''; el.dataset.raw='';
   dlgQarz.showModal();
 }
-document.getElementById('qarzForm').addEventListener('submit', (e)=>{
-  e.preventDefault();
+document.getElementById('formQarz').onsubmit = ()=>{
+  const summa = getVal('qarzSumma'); if(!summa) return;
   const c = data[currentIndex];
-  if(!Array.isArray(c.history)) c.history = [];
-  const rec = {
-    date : document.getElementById('q_date').value,
-    item : document.getElementById('q_item').value.trim(),
-    qty  : getVal('q_qty'),
-    price: getVal('q_price'),
-    note : document.getElementById('q_note').value.trim()
-  };
-  if(!rec.date || !rec.item || !rec.qty || !rec.price){
-    alert('Sana, tovar, miqdor va narx majburiy.'); return;
-  }
-  c.history.push(rec);
-  saveLocal(); queueCloudSave(); refresh();
-  dlgQarz.close();
-});
+  if(parseNum(c.price)>0){ c.qty = parseNum(c.qty) + (summa / parseNum(c.price)); }
+  save(); refresh();
+};
 
 function openTolov(i){
   currentIndex = i;
-  const el = document.getElementById('tolovSumma'); if(el){ el.value=''; el.dataset.raw=''; }
+  const el = document.getElementById('tolovSumma'); el.value=''; el.dataset.raw='';
   dlgTolov.showModal();
 }
 document.getElementById('formTolov').onsubmit = ()=>{
   const summa = getVal('tolovSumma'); if(!summa) return;
-  data[currentIndex].given = parseNum(data[currentIndex].given||0) + summa;
-  saveLocal(); queueCloudSave(); refresh();
+  data[currentIndex].given = parseNum(data[currentIndex].given) + summa;
+  save(); refresh();
 };
 
 function openTovar(i){
@@ -403,47 +406,35 @@ function openTovar(i){
   document.getElementById('tovarWho').textContent = `${c.name||''} — ${c.phone||''}`;
   const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
   document.getElementById('t_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  ['t_item','t_qty','t_price','t_note'].forEach(id=>{
-    const el=document.getElementById(id); if(!el) return; el.value=''; el.dataset.raw='';
-  });
+  ['t_item','t_qty','t_price','t_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
   dlgTovar.showModal();
 }
 document.getElementById('tovarForm').addEventListener('submit',(e)=>{
   e.preventDefault();
-  const c = data[currentIndex];
-  if(!Array.isArray(c.history)) c.history = [];
-  const rec = {
-    date : document.getElementById('t_date').value,
-    item : document.getElementById('t_item').value.trim(),
-    qty  : getVal('t_qty'),
-    price: getVal('t_price'),
-    note : document.getElementById('t_note').value.trim()
-  };
-  if(!rec.date || !rec.item || !rec.qty || !rec.price){
-    alert('Sana, tovar, miqdor va narx majburiy.'); return;
-  }
-  c.history.push(rec);
-  saveLocal(); queueCloudSave(); refresh();
-  dlgTovar.close();
+  const c = data[currentIndex]; if(!Array.isArray(c.history)) c.history=[];
+  const rec = { date:document.getElementById('t_date').value,
+                item:document.getElementById('t_item').value.trim(),
+                qty:getVal('t_qty'), price:getVal('t_price'),
+                note:document.getElementById('t_note').value.trim() };
+  if(!rec.date || !rec.item || !rec.qty || !rec.price){ alert('Sana, tovar, miqdor va narx majburiy.'); return; }
+  c.history.push(rec); save(); refresh(); dlgTovar.close();
 });
 
 /* ====== Tarix ====== */
 function openHistory(i){
   histIndex = i;
-  const c = data[i];
-  if(!Array.isArray(c.history)) c.history = [];
+  const c = data[i]; if(!Array.isArray(c.history)) c.history = [];
   document.getElementById('histWho').textContent = `${c.name||''} — ${c.phone||''}`;
   const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
   document.getElementById('h_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.value=''; el.dataset.raw=''; });
-  renderHistoryList();
-  dlgHistory.showModal();
+  ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
+  renderHistoryList(); dlgHistory.showModal();
 }
 function renderHistoryList(){
   const tb = document.getElementById('histTbody'); tb.innerHTML='';
   const list = (data[histIndex].history||[]).slice().sort((a,b)=> (a.date>b.date?-1:1));
   list.forEach((x, idx)=>{
-    const total = (parseNum(x.qty) * parseNum(x.price));
+    const total = parseNum(x.qty) * parseNum(x.price);
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${x.date||''}</td>
@@ -457,174 +448,134 @@ function renderHistoryList(){
     tb.appendChild(tr);
   });
 }
-function delHist(idx){
-  data[histIndex].history.splice(idx,1);
-  saveLocal(); queueCloudSave(); renderHistoryList(); refresh();
-}
+function delHist(idx){ data[histIndex].history.splice(idx,1); save(); renderHistoryList(); refresh(); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
 document.getElementById('histForm').addEventListener('submit', (e)=>{
   e.preventDefault();
-  const rec = {
-    date : document.getElementById('h_date').value,
-    item : document.getElementById('h_item').value.trim(),
-    qty  : getVal('h_qty'),
-    price: getVal('h_price'),
-    note : document.getElementById('h_note').value.trim()
-  };
+  const rec = { date:document.getElementById('h_date').value,
+                item:document.getElementById('h_item').value.trim(),
+                qty:getVal('h_qty'), price:getVal('h_price'),
+                note:document.getElementById('h_note').value.trim() };
   if(!rec.date || !rec.item){ alert('Sana va tovar nomi majburiy.'); return; }
-  data[histIndex].history.push(rec);
-  saveLocal(); queueCloudSave();
-  ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.value=''; el.dataset.raw=''; });
+  data[histIndex].history.push(rec); save();
+  ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
   renderHistoryList(); refresh();
 });
 
-/* ====== O'chirish / Import / Export ====== */
-function delRow(i){ data.splice(i,1); saveLocal(); queueCloudSave(); refresh(); }
+/* ====== ADMIN: Harajatlar (PIN bilan) ====== */
+document.getElementById('btnExpenses').onclick = ()=>{
+  if(!getPin()){ // hali PIN yo‘q — o‘rnatish oynasi
+    ['pin1','pin2'].forEach(id=>document.getElementById(id).value='');
+    dlgSetPin.showModal();
+  }else{
+    document.getElementById('adminPinInput').value='';
+    dlgAdminPin.showModal();
+  }
+};
+
+document.getElementById('formSetPin').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const p1 = document.getElementById('pin1').value.trim();
+  const p2 = document.getElementById('pin2').value.trim();
+  if(p1.length<4){ alert('PIN kamida 4 belgidan iborat bo‘lsin.'); return; }
+  if(p1!==p2){ alert('PIN mos kelmadi.'); return; }
+  setPin(p1); dlgSetPin.close(); openExpenses();
+});
+
+document.getElementById('formAdminPin').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const pin = document.getElementById('adminPinInput').value;
+  if(pin === getPin()){ dlgAdminPin.close(); openExpenses(); }
+  else alert('PIN noto‘g‘ri.');
+});
+
+function openExpenses(){
+  // default sana bugungi kun
+  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
+  document.getElementById('e_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
+  ['e_type','e_amount','e_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
+  renderExpList(); dlgExpenses.showModal();
+}
+
+function renderExpList(){
+  const tb = document.getElementById('expTbody'); tb.innerHTML='';
+  let total = 0;
+  (expenses||[]).slice().sort((a,b)=> (a.date>b.date?-1:1)).forEach((x, i)=>{
+    const amt = parseNum(x.amount); total += amt;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${x.date||''}</td>
+      <td>${escapeHtml(x.type||'')}</td>
+      <td>${fmt(amt)}</td>
+      <td>${escapeHtml(x.note||'')}</td>
+      <td><button class="btn-red" onclick="delExpense(${i})">O‘chirish</button></td>
+    `;
+    tb.appendChild(tr);
+  });
+  document.getElementById('expTotal').textContent = fmt(total);
+}
+
+document.getElementById('expForm').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const rec = {
+    date: document.getElementById('e_date').value,
+    type: document.getElementById('e_type').value.trim(),
+    amount: getVal('e_amount'),
+    note: document.getElementById('e_note').value.trim()
+  };
+  if(!rec.date || !rec.type || !rec.amount){ alert('Sana, tur va summa majburiy.'); return; }
+  expenses.push(rec); saveExp(); renderExpList();
+  ['e_type','e_amount','e_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
+});
+
+function delExpense(i){ expenses.splice(i,1); saveExp(); renderExpList(); }
+
+/* Harajatlar import/eksport */
+document.getElementById('btnExpExport').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(expenses,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'harajatlar_backup.json'; a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById('fileExpImport').addEventListener('change',(e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ try{
+    const d = JSON.parse(r.result);
+    if(Array.isArray(d)){ expenses = d; saveExp(); renderExpList(); alert('Import muvaffaqiyatli ✅'); }
+    else alert('Fayl noto‘g‘ri');
+  }catch{ alert('Faylni o‘qishda xato'); } };
+  r.readAsText(f);
+});
+
+/* ====== O'chirish / Import / Export (mijozlar) ====== */
+function delRow(i){ data.splice(i,1); save(); refresh(); }
 
 document.getElementById('btnExport').onclick = ()=>{
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'qarz_tolov_backup.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  a.click(); URL.revokeObjectURL(a.href);
 };
 document.getElementById('fileImport').addEventListener('change', (e)=>{
   const f = e.target.files[0]; if(!f) return;
   const r = new FileReader();
   r.onload = ()=>{ try{
       const d = JSON.parse(r.result);
-      if(Array.isArray(d)){ data = d; saveLocal(); queueCloudSave(); refresh(); alert('Import muvaffaqiyatli ✅'); }
+      if(Array.isArray(d)){ data = d; save(); refresh(); alert('Import muvaffaqiyatli ✅'); }
       else alert('Fayl formati noto‘g‘ri');
     }catch{ alert('Faylni o‘qishda xato'); } };
   r.readAsText(f);
 });
 
-/* ====== (Ixtiyoriy) Google Sheets: Auth + Sync ====== */
-let gapiInited = false, gisInited = false, tokenClient = null;
-async function initGapi(){ if(gapiInited) return; await new Promise(r=> gapi.load('client', r)); await gapi.client.init({ apiKey: API_KEY, discoveryDocs: DISCOVERY_DOCS }); gapiInited = true; }
-async function initGis(){
-  if(gisInited) return;
-  await new Promise((resolve, reject)=>{
-    if(window.google && google.accounts && google.accounts.oauth2){ resolve(); }
-    else{
-      let tries=0; const t=setInterval(()=>{ tries++; if(window.google && google.accounts && google.accounts.oauth2){ clearInterval(t); resolve(); } if(tries>100){ clearInterval(t); reject(new Error('GIS yuklanmadi')); }},50);
-    }
-  });
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPES,
-    callback: (resp)=>{ if(resp && resp.access_token){ /* ok */ } }
-  });
-  gisInited = true;
-}
-function ensureToken(){ const token = gapi.client.getToken(); if(!token){ tokenClient.requestAccessToken({prompt: 'consent'}); } }
+/* ====== Input hodisalari ====== */
+['f_qty','f_price','f_given','qarzSumma','tolovSumma','h_qty','h_price','t_qty','t_price','e_amount']
+  .forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', fmtInput); });
 
-document.getElementById('btnGoogle').onclick = async ()=> { try{ await initGapi(); await initGis(); ensureToken(); }catch(e){ alert('Google ulashda xato: '+ e.message); } };
-document.getElementById('btnCloudSave').onclick = ()=> cloudSave(true);
-document.getElementById('btnCloudLoad').onclick = ()=> cloudLoad(true);
-
-function mapToSheets(){
-  const customers = [['id','name','phone','base_qty','base_price','given','updated_at']];
-  const history   = [['customer_id','date','item','qty','price','note']];
-  const payments  = [['customer_id','date','amount','note']];
-  data.forEach(c=>{
-    customers.push([c.id, c.name||'', c.phone||'', parseNum(c.qty||0), parseNum(c.price||0), parseNum(c.given||0), new Date().toISOString()]);
-    (c.history||[]).forEach(h=>{
-      history.push([c.id, h.date||'', h.item||'', parseNum(h.qty||0), parseNum(h.price||0), h.note||'']);
-    });
-  });
-  return {customers, history, payments};
-}
-function mapFromSheets(resp){
-  const ranges = resp.result.valueRanges || [];
-  const byTitle = {};
-  ranges.forEach(r=>{ const name = r.range.split('!')[0].replace(/'/g,''); byTitle[name] = r.values || []; });
-  const rowsC = (byTitle['Customers']||[]).slice(1);
-  const rowsH = (byTitle['History']||[]).slice(1);
-  const byId = {};
-  rowsC.forEach(r=>{
-    const [id, name, phone, base_qty, base_price, given] = r;
-    byId[id] = {
-      id, name, phone,
-      qty: parseNum(base_qty||0),
-      price: parseNum(base_price||0),
-      given: parseNum(given||0),
-      history: []
-    };
-  });
-  rowsH.forEach(r=>{
-    const [cid, date, item, qty, price, note] = r;
-    if(byId[cid]){
-      byId[cid].history.push({
-        date: String(date||''),
-        item: String(item||''),
-        qty : parseNum(qty||0),
-        price: parseNum(price||0),
-        note: String(note||'')
-      });
-    }
-  });
-  return Object.values(byId);
-}
-
-let cloudSaveTimer = null;
-function queueCloudSave(){ clearTimeout(cloudSaveTimer); cloudSaveTimer = setTimeout(()=> cloudSave(false), 1500); }
-
-async function cloudSave(showToast){
-  try{
-    await initGapi(); await initGis(); ensureToken();
-    const sheets = mapToSheets();
-    await gapi.client.sheets.spreadsheets.values.batchClear({
-      spreadsheetId: SPREADSHEET_ID,
-      resource: { ranges: ['Customers!A2:Z', 'History!A2:Z', 'Payments!A2:Z'] }
-    });
-    const body = {
-      data: [
-        { range: 'Customers!A1', majorDimension: 'ROWS', values: sheets.customers },
-        { range: 'History!A1',   majorDimension: 'ROWS', values: sheets.history },
-        { range: 'Payments!A1',  majorDimension: 'ROWS', values: sheets.payments },
-      ],
-      valueInputOption: 'RAW'
-    };
-    await gapi.client.sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID, resource: body
-    });
-    if(showToast) alert('Bulutga saqlandi ✅');
-  }catch(e){ console.error(e); alert('Bulutga saqlashda xato: '+ e.message); }
-}
-async function cloudLoad(showToast){
-  try{
-    await initGapi(); await initGis(); ensureToken();
-    const resp = await gapi.client.sheets.spreadsheets.values.batchGet({
-      spreadsheetId: SPREADSHEET_ID,
-      ranges: ['Customers!A1:Z', 'History!A1:Z', 'Payments!A1:Z']
-    });
-    data = mapFromSheets(resp);
-    saveLocal(); refresh();
-    if(showToast) alert('Bulutdan yuklandi ✅');
-  }catch(e){ console.error(e); alert('Bulutdan yuklashda xato: '+ e.message); }
-}
-
-/* ====== Raqamli inputlarni formatlash (kasr bilan) ====== */
-['f_qty','f_price','f_given','tolovSumma','h_qty','h_price','q_qty','q_price','t_qty','t_price'].forEach(id=>{
-  const el = document.getElementById(id);
-  if(el) el.addEventListener('input', fmtInput);
-});
-
-/* Boshlang'ich chizish */
+/* Boshlash */
 refresh();
-
-/* Demo (faqat bo‘sh bo‘lsa) */
-if(data.length===0){
-  data = [
-    {id:uid(), name:'Akrom aka', phone:'901112233', qty:2, price:12000.5, given:0, history:[
-      {date:new Date().toISOString().slice(0,10), item:'Shakar 1kg', qty:1.5, price:12000.5, note:''}
-    ]},
-    {id:uid(), name:'Zulfiya opa', phone:'933006655', qty:0, price:0, given:50000.75, history:[]}
-  ];
-  saveLocal(); refresh();
-}
 </script>
 </body>
 </html>
