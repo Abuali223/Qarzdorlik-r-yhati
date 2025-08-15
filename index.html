@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Qarzdorlik va To‘lovlar</title>
+  <title>Qarzdorlik va Harajatlar</title>
   <style>
     :root{
       --bg:#0e1116; --panel:#151a22; --muted:#8a94a6; --text:#e6eefc;
@@ -23,7 +23,7 @@
     .btn-green{background:#0f2316;color:#c8f7d1}
     .btn-blue{background:#112033;color:#cde4ff}
     .btn-red{background:#2a1010;color:#ffd0d0}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 20px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 20px}
     .stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
     .stat h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
     .stat .num{font-size:22px;font-weight:700}
@@ -31,34 +31,25 @@
     th,td{padding:10px;border-bottom:1px solid var(--border)}
     th{color:var(--muted);background:rgba(255,255,255,.02)}
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:520px;width:calc(100% - 24px)}
+    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:980px;width:calc(100% - 24px)}
     dialog::backdrop{background:rgba(0,0,0,.55)}
     .modal-head{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
     .modal-body{padding:16px;display:grid;gap:12px}
     .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
     .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
-    .field input, .field textarea{background:transparent;border:0;outline:0;color:var(--text);width:100%}
-
-    /* Tarix va Harajatlar oynalari uchun kengroq */
-    #dlgHistory{max-width:920px}
-    #histTable th,#histTable td{border-bottom:1px solid var(--border);padding:8px 10px}
-    #dlgExpenses{max-width:980px}
-    #expTable th,#expTable td{border-bottom:1px solid var(--border);padding:8px 10px}
-    #expForm{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px}
+    .field input{background:transparent;border:0;outline:0;color:var(--text);width:100%}
+    #histTable th,#histTable td,#expTable th,#expTable td{border-bottom:1px solid var(--border);padding:8px 10px}
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <div class="brand">Qarzdorlik va To‘lovlar</div>
+      <div class="brand">Qarzdorlik va Harajatlar</div>
       <div class="toolbar">
         <button id="btnAdd" class="btn-green">+ Mijoz qo‘shish</button>
+        <button id="btnExpenses" class="btn-blue">Harajatlar (Admin)</button>
         <button id="btnExport">Eksport</button>
-        <label class="btn">
-          Import <input id="fileImport" type="file" accept="application/json" hidden>
-        </label>
-        <!-- Admin uchun -->
-        <button id="btnExpenses" class="btn-blue" title="Harajatlar (admin)">Harajatlar</button>
+        <label class="btn">Import <input id="fileImport" type="file" accept="application/json" hidden></label>
       </div>
     </header>
 
@@ -66,6 +57,7 @@
       <div class="stat"><h3>Jami qarz</h3><div class="num" id="statQarz">0</div></div>
       <div class="stat"><h3>Qaytgan</h3><div class="num" id="statTolov">0</div></div>
       <div class="stat"><h3>Qoldiq</h3><div class="num" id="statQoldiq">0</div></div>
+      <div class="stat"><h3>Jami harajat</h3><div class="num" id="statExpense">0</div></div>
     </section>
 
     <table>
@@ -80,15 +72,15 @@
     </table>
   </div>
 
-  <!-- Qo'shish / Tahrirlash -->
+  <!-- Mijoz qo‘shish/tahrirlash -->
   <dialog id="dlgAddEdit">
     <div class="modal-head" id="dlgTitle">Mijoz ma’lumoti</div>
     <form method="dialog" id="formAddEdit">
       <div class="modal-body">
         <label class="field"><input id="f_name" placeholder="Ism" required></label>
-        <label class="field"><input id="f_phone" placeholder="Telefon raqam (mas: 97 123 45 67)"></label>
-        <label class="field"><input id="f_qty" type="text" placeholder="Tovar soni"></label>
-        <label class="field"><input id="f_price" type="text" placeholder="Tovar narxi"></label>
+        <label class="field"><input id="f_phone" placeholder="Telefon (avto +998)"></label>
+        <label class="field"><input id="f_qty" type="text" placeholder="Boshlang‘ich tovar soni"></label>
+        <label class="field"><input id="f_price" type="text" placeholder="Boshlang‘ich narx"></label>
         <label class="field"><input id="f_given" type="text" placeholder="Berilgan summa"></label>
       </div>
       <div class="modal-foot">
@@ -98,9 +90,51 @@
     </form>
   </dialog>
 
+  <!-- Tarix (xaridlar) -->
+  <dialog id="dlgHistory">
+    <div class="modal-head">Xaridlar tarixi</div>
+    <div class="modal-body" style="gap:14px">
+      <div id="histWho" style="opacity:.8"></div>
+      <form id="histForm" style="display:grid;grid-template-columns:repeat(6,1fr) auto;gap:8px">
+        <label class="field"><input id="h_date" type="date" required></label>
+        <label class="field"><input id="h_item" placeholder="Tovar nomi" required></label>
+        <label class="field"><input id="h_qty" type="text" placeholder="Miqdor" required></label>
+        <label class="field"><input id="h_price" type="text" placeholder="Narx (1 dona)" required></label>
+        <label class="field" style="grid-column:span 2"><input id="h_note" placeholder="Izoh (ixtiyoriy)"></label>
+        <button class="btn-blue" type="submit">Qo‘shish</button>
+      </form>
+      <div style="overflow:auto">
+        <table id="histTable" style="width:100%;border-collapse:collapse">
+          <thead><tr><th>Sana</th><th>Tovar</th><th>Miqdor</th><th>Narx</th><th>Jami</th><th>Izoh</th><th>Amal</th></tr></thead>
+          <tbody id="histTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot"><button type="button" onclick="dlgHistory.close()">Yopish</button></div>
+  </dialog>
+
+  <!-- Tovar qo‘shish (tez) -->
+  <dialog id="dlgTovar">
+    <div class="modal-head">Tovar qo‘shish</div>
+    <form method="dialog" id="tovarForm">
+      <div class="modal-body" style="gap:12px">
+        <div id="tovarWho" style="opacity:.8"></div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr) auto;gap:8px">
+          <label class="field"><input id="t_date" type="date" required></label>
+          <label class="field"><input id="t_item" placeholder="Tovar nomi" required></label>
+          <label class="field"><input id="t_qty" type="text" placeholder="Miqdor" required></label>
+          <label class="field"><input id="t_price" type="text" placeholder="Narx (1 dona)" required></label>
+          <label class="field" style="grid-column:span 2"><input id="t_note" placeholder="Izoh (ixtiyoriy)"></label>
+          <button class="btn-blue" type="submit">Saqlash</button>
+        </div>
+      </div>
+      <div class="modal-foot"><button type="button" onclick="dlgTovar.close()">Yopish</button></div>
+    </form>
+  </dialog>
+
   <!-- Qarz -->
   <dialog id="dlgQarz">
-    <div class="modal-head">Qarz qo‘shish</div>
+    <div class="modal-head">Qarz qo‘shish (summaga qarab tovar soni oshadi)</div>
     <form method="dialog" id="formQarz">
       <div class="modal-body">
         <label class="field"><input id="qarzSumma" type="text" placeholder="Qarz summa"></label>
@@ -112,7 +146,7 @@
     </form>
   </dialog>
 
-  <!-- To'lov -->
+  <!-- To‘lov -->
   <dialog id="dlgTolov">
     <div class="modal-head">To‘lov kiritish</div>
     <form method="dialog" id="formTolov">
@@ -126,107 +160,24 @@
     </form>
   </dialog>
 
-  <!-- TARIX (mijoz xaridlari) -->
-  <dialog id="dlgHistory">
-    <div class="modal-head">Xaridlar tarixi</div>
-    <div class="modal-body" style="gap:14px">
-      <div id="histWho" style="opacity:.8"></div>
-      <form id="histForm">
-        <label class="field"><input id="h_date" type="date" required></label>
-        <label class="field"><input id="h_item" placeholder="Tovar nomi" required></label>
-        <label class="field"><input id="h_qty"  type="text" placeholder="Miqdor (dona)" required></label>
-        <label class="field"><input id="h_price" type="text" placeholder="Narx (1 dona)" required></label>
-        <label class="field" style="grid-column: span 2"><input id="h_note" placeholder="Izoh (ixtiyoriy)"></label>
-        <button type="submit" class="btn-blue">Qo‘shish</button>
-      </form>
-
-      <div style="overflow:auto">
-        <table id="histTable" style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr><th>Sana</th><th>Tovar</th><th>Miqdor</th><th>Narx</th><th>Jami</th><th>Izoh</th><th>Amal</th></tr>
-          </thead>
-          <tbody id="histTbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button type="button" onclick="dlgHistory.close()">Yopish</button>
-    </div>
-  </dialog>
-
-  <!-- TOVAR (alohida tugma) -->
-  <dialog id="dlgTovar">
-    <div class="modal-head">Tovar qo‘shish</div>
-    <form method="dialog" id="tovarForm">
-      <div class="modal-body" style="gap:12px">
-        <div id="tovarWho" style="opacity:.8"></div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px">
-          <label class="field"><input id="t_date"  type="date" required></label>
-          <label class="field"><input id="t_item"  placeholder="Tovar nomi" required></label>
-          <label class="field"><input id="t_qty"   type="text" placeholder="Miqdor (dona)" required></label>
-          <label class="field"><input id="t_price" type="text" placeholder="Narx (1 dona)" required></label>
-          <label class="field" style="grid-column: span 2"><input id="t_note" placeholder="Izoh (ixtiyoriy)"></label>
-          <button class="btn-blue" type="submit">Saqlash</button>
-        </div>
-      </div>
-      <div class="modal-foot">
-        <button type="button" onclick="dlgTovar.close()">Yopish</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- ADMIN: PIN kirish -->
-  <dialog id="dlgAdminPin">
-    <div class="modal-head">Admin kirish</div>
-    <form method="dialog" id="formAdminPin">
-      <div class="modal-body">
-        <div class="field"><input id="adminPinInput" type="password" placeholder="PIN"></div>
-        <small style="color:var(--muted)">Bir marta o‘rnatib olgan PIN’ni bu yerda kiriting.</small>
-      </div>
-      <div class="modal-foot">
-        <button type="button" onclick="dlgAdminPin.close()">Bekor</button>
-        <button class="btn-blue">Kirish</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- ADMIN: PIN o‘rnatish (agar yo‘q bo‘lsa) -->
-  <dialog id="dlgSetPin">
-    <div class="modal-head">Admin PIN o‘rnatish</div>
-    <form method="dialog" id="formSetPin">
-      <div class="modal-body">
-        <div class="field"><input id="pin1" type="password" placeholder="PIN (kamida 4 belgi)" required></div>
-        <div class="field"><input id="pin2" type="password" placeholder="PIN takror" required></div>
-      </div>
-      <div class="modal-foot">
-        <button type="button" onclick="dlgSetPin.close()">Bekor</button>
-        <button class="btn-green">Saqlash</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- ADMIN: Harajatlar -->
+  <!-- Harajatlar (admin) -->
   <dialog id="dlgExpenses">
-    <div class="modal-head">Harajatlar (faqat admin)</div>
+    <div class="modal-head">Harajatlar (admin)</div>
     <div class="modal-body" style="gap:14px">
-      <form id="expForm">
+      <form id="expForm" style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px">
         <label class="field"><input id="e_date" type="date" required></label>
         <label class="field"><input id="e_type" placeholder="Tur (mas: transport)" required></label>
         <label class="field"><input id="e_amount" type="text" placeholder="Summasi" required></label>
-        <label class="field" style="grid-column: span 2"><input id="e_note" placeholder="Izoh (ixtiyoriy)"></label>
+        <label class="field" style="grid-column:span 2"><input id="e_note" placeholder="Izoh (ixtiyoriy)"></label>
         <button class="btn-green" type="submit">Qo‘shish</button>
       </form>
-
       <div style="overflow:auto">
         <table id="expTable" style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr><th>Sana</th><th>Tur</th><th>Summasi</th><th>Izoh</th><th>Amal</th></tr>
-          </thead>
+          <thead><tr><th>Sana</th><th>Tur</th><th>Summa</th><th>Izoh</th><th>Amal</th></tr></thead>
           <tbody id="expTbody"></tbody>
         </table>
       </div>
-
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
         <div><b>Jami harajat:</b> <span id="expTotal">0</span></div>
         <div style="display:flex;gap:8px">
           <button id="btnExpExport">Eksport</button>
@@ -234,84 +185,90 @@
         </div>
       </div>
     </div>
-    <div class="modal-foot">
-      <button type="button" onclick="dlgExpenses.close()">Yopish</button>
-    </div>
+    <div class="modal-foot"><button type="button" onclick="dlgExpenses.close()">Yopish</button></div>
   </dialog>
 
 <script>
-/* ====== Saqlash/yuklash (localStorage) ====== */
-const STORAGE_KEY = 'qarz_tolov_app_v3';
-const EXP_KEY     = 'qarz_expenses_v1';
-const PIN_KEY     = 'qarz_admin_pin_v1';
+/* ====== localStorage ====== */
+const STORAGE_KEY = 'qarz_tolov_v4';
+const EXP_KEY     = 'harajatlar_v2';
+function saveClients(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function loadClients(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }catch{ return []; } }
+function saveExpenses(){ localStorage.setItem(EXP_KEY, JSON.stringify(expenses)); }
+function loadExpenses(){ try{ return JSON.parse(localStorage.getItem(EXP_KEY)) || []; }catch{ return []; } }
 
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ return []; } }
-
-function saveExp(){ localStorage.setItem(EXP_KEY, JSON.stringify(expenses)); }
-function loadExp(){ try{ return JSON.parse(localStorage.getItem(EXP_KEY)) || []; } catch(e){ return []; } }
-
-function getPin(){ return localStorage.getItem(PIN_KEY) || ''; }
-function setPin(p){ localStorage.setItem(PIN_KEY, p); }
-
-/* ====== Ma'lumotlar ====== */
-let data = load();                  // mijozlar
-let expenses = loadExp();           // harajatlar [{date,type,amount,note}]
+/* ====== holat ====== */
+let data = loadClients();          // [{name,phone,qty,price,given,history[]}]
+let expenses = loadExpenses();     // [{date,type,amount,note}]
 let currentIndex = null;
 let editMode = false;
 let histIndex = null;
 
+/* ====== yordamchilar ====== */
 const tbody = document.getElementById('tbody');
-const fmt = (n)=> Number(n||0).toLocaleString('uz-UZ', {maximumFractionDigits: 3});
-const parseNum = (v)=>{ const s=String(v??'').replace(',', '.').replace(/[^0-9.]/g,''); if(!s) return 0; const p=s.split('.'); const n=parseFloat(p.length>2?p[0]+'.'+p.slice(1).join(''):s); return isNaN(n)?0:n; };
+const fmt = (n)=> Number(n||0).toLocaleString('uz-UZ', {maximumFractionDigits:3});
+const parseNum = (v)=>{ const s=String(v??'').replace(',', '.').replace(/[^0-9.]/g,''); if(!s) return 0; const p=s.split('.'); return parseFloat(p.length>2?p[0]+'.'+p.slice(1).join(''):s)||0; };
 
-/* Kasr son kiritish va formatlash */
+/* Telefon maskasi (+998 AA XXX XX XX) */
+function formatUZPhoneFromDigits(digits){
+  digits = String(digits||'').replace(/\D/g,'');
+  if(!digits.startsWith('998')) digits = '998' + digits;
+  digits = digits.slice(0, 12);
+  const cc = '+998';
+  const rest = digits.slice(3);
+  let s = cc;
+  if(rest.length>0) s += ' ' + rest.slice(0,2);
+  if(rest.length>2) s += ' ' + rest.slice(2,5);
+  if(rest.length>5) s += ' ' + rest.slice(5,7);
+  if(rest.length>7) s += ' ' + rest.slice(7,9);
+  return s;
+}
+function phoneMask(e){
+  let digits = String(e.target.value || '').replace(/\D/g,'');
+  if(digits.startsWith('8') && !digits.startsWith('998')) digits = '998' + digits.slice(1);
+  if(digits.startsWith('0')) digits = '998' + digits.slice(1);
+  if(digits === '') { e.target.value = '+998 '; return; }
+  e.target.value = formatUZPhoneFromDigits(digits);
+}
+
+/* Kasrli inputni formatlash */
 function fmtInput(e){
   let val = e.target.value.replace(',', '.').replace(/[^0-9.]/g,'');
   const parts = val.split('.');
-  if(parts.length > 2){ val = parts[0] + '.' + parts.slice(1).join(''); }
-  if(val === ''){ e.target.dataset.raw = ''; e.target.value = ''; return; }
+  if(parts.length>2){ val = parts[0] + '.' + parts.slice(1).join(''); }
+  if(val===''){ e.target.dataset.raw=''; e.target.value=''; return; }
   e.target.dataset.raw = parseFloat(val) || 0;
+  // kasr bo‘lsa xuddi kirganidek qoldiramiz, butun bo‘lsa minglik
   e.target.value = val.includes('.') ? val : fmt(val);
 }
 function getVal(id){
   const el = document.getElementById(id);
-  return parseNum(el.dataset?.raw ?? el.value);
+  return parseNum(el?.dataset?.raw ?? el?.value);
 }
 
-/* ====== Umumiy hisob (tarix bilan) ====== */
+/* Umumiy hisob (tarix bilan birga) */
 function totalsForClient(c){
-  const baseQty   = parseNum(c.qty || 0);
-  const basePrice = parseNum(c.price || 0);
-  const hist = Array.isArray(c.history) ? c.history : [];
-
-  let totalQty  = baseQty;
-  let totalDebt = baseQty * basePrice;
-
-  for (const r of hist) {
-    const q = parseNum(r.qty);
-    const p = parseNum(r.price);
-    totalQty  += q;
-    totalDebt += q * p;
+  const baseQty = parseNum(c.qty||0);
+  const basePrice = parseNum(c.price||0);
+  const given = parseNum(c.given||0);
+  const hist = Array.isArray(c.history)? c.history : [];
+  let totalQty = baseQty;
+  let totalDebt = baseQty*basePrice;
+  for(const r of hist){
+    const q=parseNum(r.qty), p=parseNum(r.price);
+    totalQty += q; totalDebt += q*p;
   }
-
-  const given  = parseNum(c.given || 0);
   const remain = Math.max(0, totalDebt - given);
-  return { totalQty, totalDebt, given, remain };
+  return {totalQty,totalDebt,given,remain};
 }
 
-/* ====== Jadval ====== */
+/* Jadvalni chizish */
 function refresh(){
   tbody.innerHTML='';
   let jamiQarz=0, jamiTolov=0, jamiQoldiq=0;
-
   data.forEach((c,i)=>{
     const t = totalsForClient(c);
-
-    jamiQarz  += t.totalDebt;
-    jamiTolov += t.given;
-    jamiQoldiq+= t.remain;
-
+    jamiQarz += t.totalDebt; jamiTolov += t.given; jamiQoldiq += t.remain;
     tbody.insertAdjacentHTML('beforeend', `
       <tr>
         <td>${i+1}</td>
@@ -323,259 +280,212 @@ function refresh(){
         <td>${fmt(t.given)}</td>
         <td><b>${fmt(t.remain)}</b></td>
         <td class="row-actions">
-          <button class="btn-blue"  onclick="openTovar(${i})">Tovar</button>
-          <button class="btn-blue"  onclick="openQarz(${i})">Qarz</button>
+          <button class="btn-blue" onclick="openTovar(${i})">Tovar</button>
+          <button class="btn-blue" onclick="openHistory(${i})">Tarix</button>
+          <button class="btn-blue" onclick="openQarz(${i})">Qarz</button>
           <button class="btn-green" onclick="openTolov(${i})">To‘lov</button>
-          <button onclick="openHistory(${i})">Tarix</button>
           <button onclick="edit(${i})">Tahrirlash</button>
-          <button class="btn-red"  onclick="delRow(${i})">O‘chirish</button>
+          <button class="btn-red" onclick="delRow(${i})">O‘chirish</button>
         </td>
       </tr>
     `);
   });
-
   document.getElementById('statQarz').textContent   = fmt(jamiQarz);
   document.getElementById('statTolov').textContent  = fmt(jamiTolov);
   document.getElementById('statQoldiq').textContent = fmt(jamiQoldiq);
+  document.getElementById('statExpense').textContent= fmt(expenses.reduce((s,x)=>s+parseNum(x.amount),0));
 }
 
-/* ====== Mijoz qo'shish / tahrirlash ====== */
+/* Mijoz qo‘shish/tahrirlash */
 document.getElementById('btnAdd').onclick = ()=>{
-  editMode = false;
-  document.getElementById('dlgTitle').textContent = "Mijoz qo‘shish";
+  editMode=false;
+  document.getElementById('dlgTitle').textContent="Mijoz qo‘shish";
   document.getElementById('formAddEdit').reset();
-  ['f_qty','f_price','f_given'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.dataset.raw=''; el.value=''; }});
+  ['f_qty','f_price','f_given'].forEach(id=>{const el=document.getElementById(id); if(el){el.dataset.raw=''; el.value='';}});
+  document.getElementById('f_phone').value = '+998 ';
   dlgAddEdit.showModal();
 };
-document.getElementById('formAddEdit').onsubmit = ()=>{
+document.getElementById('formAddEdit').addEventListener('submit', (e)=>{
+  e.preventDefault();
   const client = {
-    name : document.getElementById('f_name').value.trim(),
+    name: document.getElementById('f_name').value.trim(),
     phone: document.getElementById('f_phone').value.trim(),
-    qty  : getVal('f_qty'),
+    qty: getVal('f_qty'),
     price: getVal('f_price'),
     given: getVal('f_given'),
-    history: Array.isArray(data[currentIndex]?.history) && editMode ? data[currentIndex].history : []
+    history: editMode && Array.isArray(data[currentIndex]?.history) ? data[currentIndex].history : []
   };
-  if(editMode){ data[currentIndex] = client; }
-  else{ data.push(client); }
-  save(); refresh();
-};
-
+  if(editMode){ data[currentIndex]=client; } else { data.push(client); }
+  saveClients(); refresh(); dlgAddEdit.close();
+});
 function edit(i){
-  editMode = true; currentIndex = i;
-  document.getElementById('dlgTitle').textContent = "Mijozni tahrirlash";
-  const c = data[i];
-  document.getElementById('f_name').value  = c.name||'';
-  document.getElementById('f_phone').value = c.phone || '';
-  const setNum = (id,val)=>{ const el=document.getElementById(id); if(!el) return;
-    const n = parseNum(val); el.dataset.raw=String(n); el.value = String(n).includes('.') ? String(n) : fmt(n);
-  };
-  setNum('f_qty',  c.qty);
-  setNum('f_price',c.price);
-  setNum('f_given',c.given);
+  editMode=true; currentIndex=i;
+  document.getElementById('dlgTitle').textContent="Mijozni tahrirlash";
+  const c=data[i];
+  document.getElementById('f_name').value=c.name||'';
+  document.getElementById('f_phone').value=c.phone||'+998 ';
+  ['f_qty','f_price','f_given'].forEach(id=>{
+    const el=document.getElementById(id); if(!el)return;
+    const n=parseNum(c[id.slice(2)]||0);
+    el.dataset.raw=String(n); el.value=String(n).includes('.')?String(n):fmt(n);
+  });
+  phoneMask({target: document.getElementById('f_phone')});
   dlgAddEdit.showModal();
 }
 
-/* ====== Qarz / To'lov / Tovar ====== */
-function openQarz(i){
-  currentIndex = i;
-  const el = document.getElementById('qarzSumma'); el.value=''; el.dataset.raw='';
-  dlgQarz.showModal();
-}
-document.getElementById('formQarz').onsubmit = ()=>{
-  const summa = getVal('qarzSumma'); if(!summa) return;
-  const c = data[currentIndex];
-  if(parseNum(c.price)>0){ c.qty = parseNum(c.qty) + (summa / parseNum(c.price)); }
-  save(); refresh();
-};
-
-function openTolov(i){
-  currentIndex = i;
-  const el = document.getElementById('tolovSumma'); el.value=''; el.dataset.raw='';
-  dlgTolov.showModal();
-}
-document.getElementById('formTolov').onsubmit = ()=>{
-  const summa = getVal('tolovSumma'); if(!summa) return;
-  data[currentIndex].given = parseNum(data[currentIndex].given) + summa;
-  save(); refresh();
-};
-
-function openTovar(i){
-  currentIndex = i;
-  const c = data[i];
-  document.getElementById('tovarWho').textContent = `${c.name||''} — ${c.phone||''}`;
-  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
-  document.getElementById('t_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  ['t_item','t_qty','t_price','t_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
-  dlgTovar.showModal();
-}
-document.getElementById('tovarForm').addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const c = data[currentIndex]; if(!Array.isArray(c.history)) c.history=[];
-  const rec = { date:document.getElementById('t_date').value,
-                item:document.getElementById('t_item').value.trim(),
-                qty:getVal('t_qty'), price:getVal('t_price'),
-                note:document.getElementById('t_note').value.trim() };
-  if(!rec.date || !rec.item || !rec.qty || !rec.price){ alert('Sana, tovar, miqdor va narx majburiy.'); return; }
-  c.history.push(rec); save(); refresh(); dlgTovar.close();
-});
-
-/* ====== Tarix ====== */
+/* Tarix */
 function openHistory(i){
-  histIndex = i;
-  const c = data[i]; if(!Array.isArray(c.history)) c.history = [];
-  document.getElementById('histWho').textContent = `${c.name||''} — ${c.phone||''}`;
-  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
-  document.getElementById('h_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
-  renderHistoryList(); dlgHistory.showModal();
+  histIndex=i;
+  const c=data[i]; if(!Array.isArray(c.history)) c.history=[];
+  document.getElementById('histWho').textContent=`${c.name||''} — ${c.phone||''}`;
+  const tzOffsetMs=(new Date()).getTimezoneOffset()*60000;
+  document.getElementById('h_date').value=new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
+  ['h_item','h_qty','h_price','h_note'].forEach(id=>{const el=document.getElementById(id); el.value=''; el.dataset.raw='';});
+  renderHistory(); dlgHistory.showModal();
 }
-function renderHistoryList(){
-  const tb = document.getElementById('histTbody'); tb.innerHTML='';
-  const list = (data[histIndex].history||[]).slice().sort((a,b)=> (a.date>b.date?-1:1));
-  list.forEach((x, idx)=>{
-    const total = parseNum(x.qty) * parseNum(x.price);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+function renderHistory(){
+  const tb=document.getElementById('histTbody'); tb.innerHTML='';
+  const list=(data[histIndex].history||[]).slice().sort((a,b)=>a.date>b.date?-1:1);
+  list.forEach((x,idx)=>{
+    const total=parseNum(x.qty)*parseNum(x.price);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
       <td>${x.date||''}</td>
       <td>${escapeHtml(x.item||'')}</td>
       <td>${fmt(x.qty||0)}</td>
       <td>${fmt(x.price||0)}</td>
       <td><b>${fmt(total)}</b></td>
       <td>${escapeHtml(x.note||'')}</td>
-      <td><button class="btn-red" onclick="delHist(${idx})">O‘chirish</button></td>
-    `;
+      <td><button class="btn-red" onclick="delHist(${idx})">O‘chirish</button></td>`;
     tb.appendChild(tr);
   });
 }
-function delHist(idx){ data[histIndex].history.splice(idx,1); save(); renderHistoryList(); refresh(); }
+document.getElementById('histForm').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const rec={
+    date:document.getElementById('h_date').value,
+    item:document.getElementById('h_item').value.trim(),
+    qty:getVal('h_qty'),
+    price:getVal('h_price'),
+    note:document.getElementById('h_note').value.trim()
+  };
+  if(!rec.date||!rec.item||!rec.qty||!rec.price){ alert('Sana/tovar/miqdor/narx majburiy.'); return; }
+  data[histIndex].history.push(rec); saveClients(); renderHistory(); refresh();
+});
+function delHist(i){ data[histIndex].history.splice(i,1); saveClients(); renderHistory(); refresh(); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
-document.getElementById('histForm').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const rec = { date:document.getElementById('h_date').value,
-                item:document.getElementById('h_item').value.trim(),
-                qty:getVal('h_qty'), price:getVal('h_price'),
-                note:document.getElementById('h_note').value.trim() };
-  if(!rec.date || !rec.item){ alert('Sana va tovar nomi majburiy.'); return; }
-  data[histIndex].history.push(rec); save();
-  ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
-  renderHistoryList(); refresh();
-});
-
-/* ====== ADMIN: Harajatlar (PIN bilan) ====== */
-document.getElementById('btnExpenses').onclick = ()=>{
-  if(!getPin()){ // hali PIN yo‘q — o‘rnatish oynasi
-    ['pin1','pin2'].forEach(id=>document.getElementById(id).value='');
-    dlgSetPin.showModal();
-  }else{
-    document.getElementById('adminPinInput').value='';
-    dlgAdminPin.showModal();
-  }
-};
-
-document.getElementById('formSetPin').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const p1 = document.getElementById('pin1').value.trim();
-  const p2 = document.getElementById('pin2').value.trim();
-  if(p1.length<4){ alert('PIN kamida 4 belgidan iborat bo‘lsin.'); return; }
-  if(p1!==p2){ alert('PIN mos kelmadi.'); return; }
-  setPin(p1); dlgSetPin.close(); openExpenses();
-});
-
-document.getElementById('formAdminPin').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const pin = document.getElementById('adminPinInput').value;
-  if(pin === getPin()){ dlgAdminPin.close(); openExpenses(); }
-  else alert('PIN noto‘g‘ri.');
-});
-
-function openExpenses(){
-  // default sana bugungi kun
-  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
-  document.getElementById('e_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  ['e_type','e_amount','e_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
-  renderExpList(); dlgExpenses.showModal();
+/* Tovar (tez kiritish) */
+function openTovar(i){
+  currentIndex=i;
+  const c=data[i];
+  document.getElementById('tovarWho').textContent=`${c.name||''} — ${c.phone||''}`;
+  const tzOffsetMs=(new Date()).getTimezoneOffset()*60000;
+  document.getElementById('t_date').value=new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
+  ['t_item','t_qty','t_price','t_note'].forEach(id=>{const el=document.getElementById(id); el.value=''; el.dataset.raw='';});
+  dlgTovar.showModal();
 }
+document.getElementById('tovarForm').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const c=data[currentIndex]; if(!Array.isArray(c.history)) c.history=[];
+  const rec={ date:document.getElementById('t_date').value,
+              item:document.getElementById('t_item').value.trim(),
+              qty:getVal('t_qty'), price:getVal('t_price'),
+              note:document.getElementById('t_note').value.trim() };
+  if(!rec.date||!rec.item||!rec.qty||!rec.price){ alert('Sana/tovar/miqdor/narx majburiy.'); return; }
+  c.history.push(rec); saveClients(); refresh(); dlgTovar.close();
+});
 
-function renderExpList(){
-  const tb = document.getElementById('expTbody'); tb.innerHTML='';
-  let total = 0;
-  (expenses||[]).slice().sort((a,b)=> (a.date>b.date?-1:1)).forEach((x, i)=>{
-    const amt = parseNum(x.amount); total += amt;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+/* Qarz / To‘lov */
+function openQarz(i){ currentIndex=i; const el=document.getElementById('qarzSumma'); el.value=''; el.dataset.raw=''; dlgQarz.showModal(); }
+document.getElementById('formQarz').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const summa=getVal('qarzSumma'); if(!summa) return;
+  const c=data[currentIndex];
+  if(parseNum(c.price)>0){ c.qty=parseNum(c.qty)+(summa/parseNum(c.price)); }
+  saveClients(); refresh(); dlgQarz.close();
+});
+function openTolov(i){ currentIndex=i; const el=document.getElementById('tolovSumma'); el.value=''; el.dataset.raw=''; dlgTolov.showModal(); }
+document.getElementById('formTolov').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const summa=getVal('tolovSumma'); if(!summa) return;
+  data[currentIndex].given=parseNum(data[currentIndex].given)+summa;
+  saveClients(); refresh(); dlgTolov.close();
+});
+
+/* Harajatlar (admin, parol: admin123) */
+document.getElementById('btnExpenses').onclick=()=>{
+  const pass=prompt("Admin parolini kiriting:");
+  if(pass==='admin123'){
+    // bugungi sanani qo‘yib beramiz
+    const tzOffsetMs=(new Date()).getTimezoneOffset()*60000;
+    document.getElementById('e_date').value=new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
+    ['e_type','e_amount','e_note'].forEach(id=>{const el=document.getElementById(id); el.value=''; el.dataset.raw='';});
+    renderExpenses(); dlgExpenses.showModal();
+  } else alert('Parol noto‘g‘ri!');
+};
+function renderExpenses(){
+  const tb=document.getElementById('expTbody'); tb.innerHTML='';
+  let total=0;
+  expenses.slice().sort((a,b)=>a.date>b.date?-1:1).forEach((x,i)=>{
+    const amt=parseNum(x.amount); total+=amt;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
       <td>${x.date||''}</td>
       <td>${escapeHtml(x.type||'')}</td>
       <td>${fmt(amt)}</td>
       <td>${escapeHtml(x.note||'')}</td>
-      <td><button class="btn-red" onclick="delExpense(${i})">O‘chirish</button></td>
-    `;
+      <td><button class="btn-red" onclick="delExpense(${i})">O‘chirish</button></td>`;
     tb.appendChild(tr);
   });
-  document.getElementById('expTotal').textContent = fmt(total);
+  document.getElementById('expTotal').textContent=fmt(total);
+  document.getElementById('statExpense').textContent=fmt(total);
 }
-
 document.getElementById('expForm').addEventListener('submit',(e)=>{
   e.preventDefault();
-  const rec = {
-    date: document.getElementById('e_date').value,
-    type: document.getElementById('e_type').value.trim(),
-    amount: getVal('e_amount'),
-    note: document.getElementById('e_note').value.trim()
-  };
-  if(!rec.date || !rec.type || !rec.amount){ alert('Sana, tur va summa majburiy.'); return; }
-  expenses.push(rec); saveExp(); renderExpList();
-  ['e_type','e_amount','e_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
+  const rec={ date:document.getElementById('e_date').value,
+              type:document.getElementById('e_type').value.trim(),
+              amount:getVal('e_amount'),
+              note:document.getElementById('e_note').value.trim() };
+  if(!rec.date||!rec.type||!rec.amount){ alert('Sana, tur va summa majburiy.'); return; }
+  expenses.push(rec); saveExpenses(); renderExpenses();
 });
+function delExpense(i){ expenses.splice(i,1); saveExpenses(); renderExpenses(); }
 
-function delExpense(i){ expenses.splice(i,1); saveExp(); renderExpList(); }
-
-/* Harajatlar import/eksport */
-document.getElementById('btnExpExport').onclick = ()=>{
-  const blob = new Blob([JSON.stringify(expenses,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'harajatlar_backup.json'; a.click();
-  URL.revokeObjectURL(a.href);
+/* Import / Export (mijozlar) */
+document.getElementById('btnExport').onclick=()=>{
+  const blob=new Blob([JSON.stringify({clients:data, expenses},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup.json'; a.click(); URL.revokeObjectURL(a.href);
 };
-document.getElementById('fileExpImport').addEventListener('change',(e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{ try{
-    const d = JSON.parse(r.result);
-    if(Array.isArray(d)){ expenses = d; saveExp(); renderExpList(); alert('Import muvaffaqiyatli ✅'); }
-    else alert('Fayl noto‘g‘ri');
+document.getElementById('fileImport').addEventListener('change',(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result);
+    if(d.clients && Array.isArray(d.clients)) data=d.clients;
+    if(d.expenses && Array.isArray(d.expenses)) expenses=d.expenses;
+    saveClients(); saveExpenses(); refresh(); alert('Import muvaffaqiyatli ✅');
   }catch{ alert('Faylni o‘qishda xato'); } };
   r.readAsText(f);
 });
 
-/* ====== O'chirish / Import / Export (mijozlar) ====== */
-function delRow(i){ data.splice(i,1); save(); refresh(); }
-
-document.getElementById('btnExport').onclick = ()=>{
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'qarz_tolov_backup.json';
-  a.click(); URL.revokeObjectURL(a.href);
-};
-document.getElementById('fileImport').addEventListener('change', (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{ try{
-      const d = JSON.parse(r.result);
-      if(Array.isArray(d)){ data = d; save(); refresh(); alert('Import muvaffaqiyatli ✅'); }
-      else alert('Fayl formati noto‘g‘ri');
-    }catch{ alert('Faylni o‘qishda xato'); } };
-  r.readAsText(f);
-});
-
-/* ====== Input hodisalari ====== */
-['f_qty','f_price','f_given','qarzSumma','tolovSumma','h_qty','h_price','t_qty','t_price','e_amount']
+/* Input hodisalari */
+['f_qty','f_price','f_given','h_qty','h_price','t_qty','t_price','qarzSumma','tolovSumma','e_amount']
   .forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', fmtInput); });
+const phoneEl=document.getElementById('f_phone');
+phoneEl.addEventListener('input', phoneMask);
+phoneEl.addEventListener('focus', phoneMask);
 
-/* Boshlash */
+/* start */
 refresh();
+
+/* Demo (agar bo‘sh bo‘lsa) */
+if(data.length===0){
+  data=[{name:'Akrom aka', phone:'+998 90 111 22 33', qty:1.5, price:12000.5, given:0, history:[
+    {date:new Date().toISOString().slice(0,10), item:'Shakar 1kg', qty:1.5, price:12000.5, note:''}
+  ]}];
+  saveClients(); refresh();
+}
 </script>
 </body>
 </html>
