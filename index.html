@@ -2,7 +2,7 @@
 <html lang="uz">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <title>Qarzdorlik va Harajatlar</title>
   <style>
     :root{
@@ -18,26 +18,45 @@
     .brand{font-weight:700}
     .toolbar{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
     button{border:1px solid var(--border);background:var(--chip);color:var(--text);
-           padding:8px 14px;border-radius:10px;cursor:pointer;transition:.2s}
+           padding:8px 14px;border-radius:10px;cursor:pointer;transition:.2s; white-space:nowrap}
     button:hover{filter:brightness(1.08)}
     .btn-green{background:#0f2316;color:#c8f7d1}
     .btn-blue{background:#112033;color:#cde4ff}
     .btn-red{background:#2a1010;color:#ffd0d0}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 20px}
+
+    /* RESPONSIVE stats */
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;margin:12px 0 20px
+    }
+    @media (max-width:1024px){
+      .stats{ grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width:560px){
+      .stats{ grid-template-columns:1fr; }
+    }
     .stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
     .stat h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
     .stat .num{font-size:22px;font-weight:700}
-    table{width:100%;border-collapse:collapse}
+
+    /* Jadval wrap — mobil scroll */
+    .table-wrap{width:100%;overflow:auto;border-radius:10px}
+    table{width:100%;border-collapse:collapse;min-width:860px}
     th,td{padding:10px;border-bottom:1px solid var(--border)}
     th{color:var(--muted);background:rgba(255,255,255,.02)}
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:980px;width:calc(100% - 24px)}
+
+    /* Dialoglar moslashuvchan */
+    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);
+           padding:0;max-width:980px;width:calc(100% - 24px)}
     dialog::backdrop{background:rgba(0,0,0,.55)}
     .modal-head{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
     .modal-body{padding:16px;display:grid;gap:12px}
     .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
     .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
     .field input{background:transparent;border:0;outline:0;color:var(--text);width:100%}
+
     #histTable th,#histTable td,#expTable th,#expTable td{border-bottom:1px solid var(--border);padding:8px 10px}
   </style>
 </head>
@@ -60,16 +79,18 @@
       <div class="stat"><h3>Jami harajat</h3><div class="num" id="statExpense">0</div></div>
     </section>
 
-    <table>
-      <thead>
-        <tr>
-          <th>#</th><th>Ism</th><th>Telefon</th>
-          <th>Tovar (dona)</th><th>Narx</th><th><b>Jami summa</b></th>
-          <th>Berilgan</th><th>Qoldiq</th><th>Amal</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Ism</th><th>Telefon</th>
+            <th>Tovar (dona)</th><th>Narx</th><th><b>Jami summa</b></th>
+            <th>Berilgan</th><th>Qoldiq</th><th>Amal</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Mijoz qo‘shish/tahrirlash -->
@@ -104,7 +125,7 @@
         <button class="btn-blue" type="submit">Qo‘shish</button>
       </form>
       <div style="overflow:auto">
-        <table id="histTable" style="width:100%;border-collapse:collapse">
+        <table id="histTable" style="width:100%;border-collapse:collapse;min-width:660px">
           <thead><tr><th>Sana</th><th>Tovar</th><th>Miqdor</th><th>Narx</th><th>Jami</th><th>Izoh</th><th>Amal</th></tr></thead>
           <tbody id="histTbody"></tbody>
         </table>
@@ -172,14 +193,14 @@
         <button class="btn-green" type="submit">Qo‘shish</button>
       </form>
       <div style="overflow:auto">
-        <table id="expTable" style="width:100%;border-collapse:collapse">
+        <table id="expTable" style="width:100%;border-collapse:collapse;min-width:520px">
           <thead><tr><th>Sana</th><th>Tur</th><th>Summa</th><th>Izoh</th><th>Amal</th></tr></thead>
           <tbody id="expTbody"></tbody>
         </table>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
         <div><b>Jami harajat:</b> <span id="expTotal">0</span></div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="btnExpExport">Eksport</button>
           <label class="btn">Import <input id="fileExpImport" type="file" accept="application/json" hidden></label>
         </div>
@@ -238,7 +259,6 @@ function fmtInput(e){
   if(parts.length>2){ val = parts[0] + '.' + parts.slice(1).join(''); }
   if(val===''){ e.target.dataset.raw=''; e.target.value=''; return; }
   e.target.dataset.raw = parseFloat(val) || 0;
-  // kasr bo‘lsa xuddi kirganidek qoldiramiz, butun bo‘lsa minglik
   e.target.value = val.includes('.') ? val : fmt(val);
 }
 function getVal(id){
@@ -417,7 +437,6 @@ document.getElementById('formTolov').addEventListener('submit',(e)=>{
 document.getElementById('btnExpenses').onclick=()=>{
   const pass=prompt("Admin parolini kiriting:");
   if(pass==='admin123'){
-    // bugungi sanani qo‘yib beramiz
     const tzOffsetMs=(new Date()).getTimezoneOffset()*60000;
     document.getElementById('e_date').value=new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
     ['e_type','e_amount','e_note'].forEach(id=>{const el=document.getElementById(id); el.value=''; el.dataset.raw='';});
@@ -452,19 +471,36 @@ document.getElementById('expForm').addEventListener('submit',(e)=>{
 });
 function delExpense(i){ expenses.splice(i,1); saveExpenses(); renderExpenses(); }
 
-/* Import / Export (mijozlar) */
+/* === EKSport (aniq schema) === */
 document.getElementById('btnExport').onclick=()=>{
-  const blob=new Blob([JSON.stringify({clients:data, expenses},null,2)],{type:'application/json'});
+  const payload = { clients: data, expenses, _schema: 'v2' };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup.json'; a.click(); URL.revokeObjectURL(a.href);
 };
+
+/* === IMPort (eski 'data' va yangi 'clients' ni qo'llab-quvvatlash) === */
 document.getElementById('fileImport').addEventListener('change',(e)=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=()=>{ try{
     const d=JSON.parse(r.result);
-    if(d.clients && Array.isArray(d.clients)) data=d.clients;
-    if(d.expenses && Array.isArray(d.expenses)) expenses=d.expenses;
-    saveClients(); saveExpenses(); refresh(); alert('Import muvaffaqiyatli ✅');
+    const importedClients  = Array.isArray(d.clients) ? d.clients
+                           : Array.isArray(d.data)    ? d.data
+                           : null;
+    const importedExpenses = Array.isArray(d.expenses) ? d.expenses : null;
+
+    if(!importedClients && !importedExpenses){
+      alert('Fayl formati mos emas. Kerakli kalitlar: "clients" yoki "data", hamda "expenses".');
+      return;
+    }
+    if(importedClients)  data     = importedClients;
+    if(importedExpenses) expenses = importedExpenses;
+
+    saveClients(); saveExpenses(); refresh();
+
+    const cCount = data?.length || 0;
+    const eCount = expenses?.length || 0;
+    alert(`Import muvaffaqiyatli ✅\nMijozlar: ${cCount}\nHarajatlar: ${eCount}`);
   }catch{ alert('Faylni o‘qishda xato'); } };
   r.readAsText(f);
 });
