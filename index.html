@@ -38,7 +38,7 @@
     .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
     .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
     .field input, .field textarea{background:transparent;border:0;outline:0;color:var(--text);width:100%}
-    /* Tarix jadvali dialogi uchun biroz kengroq (dizayn ohangida) */
+    /* Tarix dialogi jadvali uchun biroz joylashuv (dizayn ranglarini o‘zgartirmaydi) */
     #dlgHistory{max-width:920px}
     #histTable th,#histTable td{border-bottom:1px solid var(--border);padding:8px 10px}
     #histForm{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:8px}
@@ -123,14 +123,11 @@
     </form>
   </dialog>
 
-  <!-- TARIX (yangi) -->
+  <!-- TARIX -->
   <dialog id="dlgHistory">
     <div class="modal-head">Xaridlar tarixi</div>
     <div class="modal-body" style="gap:14px">
-      <!-- Kim uchun -->
       <div id="histWho" style="opacity:.8"></div>
-
-      <!-- Qo‘shish formasi -->
       <form id="histForm">
         <label class="field"><input id="h_date" type="date" required></label>
         <label class="field"><input id="h_item" placeholder="Tovar nomi" required></label>
@@ -140,7 +137,6 @@
         <button type="submit" class="btn-blue">Qo‘shish</button>
       </form>
 
-      <!-- Ro‘yxat -->
       <div style="overflow:auto">
         <table id="histTable" style="width:100%;border-collapse:collapse">
           <thead>
@@ -165,14 +161,14 @@ function load(){
 }
 
 /* ====== Ma'lumot va yordamchilar ====== */
-let data = load();            // har bir element: {name, phone, qty, price, given, history?}
-let currentIndex = null;      // tanlangan mijoz
-let editMode = false;
+let data = load();            // {name, phone, qty, price, given, history[]}
+let currentIndex = null;      // tanlangan mijoz (jadval/qarz/to'lov)
+let editMode = false;         // mijoz tahrir rejimi
+let histIndex = null;         // tarix uchun tanlangan mijoz
 
 const tbody = document.getElementById('tbody');
 const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
 
-/* Kiritishda formatlash (minglik ajratish) */
 function fmtInput(e){
   let val = e.target.value.replace(/[^\d]/g,''); // faqat raqam
   if(val===''){ e.target.dataset.raw=''; e.target.value=''; return; }
@@ -184,31 +180,49 @@ function getVal(id){
   return Number(el.dataset.raw || el.value.replace(/[^\d]/g,'') || 0);
 }
 
-/* Jadvalni yangilash */
+/* ====== Yangi: Mijoz bo'yicha umumiy hisob (tarix bilan) ====== */
+function totalsForClient(c){
+  const baseQty   = Number(c.qty || 0);
+  const basePrice = Number(c.price || 0);
+  const hist = Array.isArray(c.history) ? c.history : [];
+
+  let totalQty  = baseQty;
+  let totalDebt = baseQty * basePrice;
+
+  for (const r of hist) {
+    const q = Number(r.qty   || 0);
+    const p = Number(r.price || 0);
+    totalQty  += q;
+    totalDebt += q * p;
+  }
+
+  const given  = Number(c.given || 0);
+  const remain = Math.max(0, totalDebt - given);
+  return { totalQty, totalDebt, given, remain };
+}
+
+/* ====== Jadvalni yangilash ====== */
 function refresh(){
   tbody.innerHTML='';
   let jamiQarz=0, jamiTolov=0, jamiQoldiq=0;
 
   data.forEach((c,i)=>{
-    // mavjud model: jami qty*price; tarix alohida yuritiladi (hisobga qo‘shmaymiz)
-    const qty = Number(c.qty||0), price = Number(c.price||0);
-    const jami = qty * price;
-    const qoldiq = Math.max(0, jami - Number(c.given||0));
+    const t = totalsForClient(c);
 
-    jamiQarz  += jami;
-    jamiTolov += Number(c.given||0);
-    jamiQoldiq+= qoldiq;
+    jamiQarz  += t.totalDebt;
+    jamiTolov += t.given;
+    jamiQoldiq+= t.remain;
 
     tbody.insertAdjacentHTML('beforeend', `
       <tr>
         <td>${i+1}</td>
         <td>${c.name||''}</td>
         <td>${c.phone||''}</td>
-        <td>${fmt(qty)}</td>
-        <td>${fmt(price)}</td>
-        <td><b>${fmt(jami)}</b></td>
-        <td>${fmt(c.given||0)}</td>
-        <td><b>${fmt(qoldiq)}</b></td>
+        <td>${fmt(t.totalQty)}</td>
+        <td>${fmt(c.price||0)}</td>
+        <td><b>${fmt(t.totalDebt)}</b></td>
+        <td>${fmt(t.given)}</td>
+        <td><b>${fmt(t.remain)}</b></td>
         <td class="row-actions">
           <button class="btn-blue"  onclick="openQarz(${i})">Qarz</button>
           <button class="btn-green" onclick="openTolov(${i})">To‘lov</button>
@@ -240,7 +254,7 @@ document.getElementById('formAddEdit').onsubmit = ()=>{
     qty  : getVal('f_qty'),
     price: getVal('f_price'),
     given: getVal('f_given'),
-    history: (editMode && Array.isArray(data[currentIndex]?.history)) ? data[currentIndex].history : [] // saqlab qolish
+    history: (editMode && Array.isArray(data[currentIndex]?.history)) ? data[currentIndex].history : []
   };
   if(editMode){ data[currentIndex] = client; }
   else{ data.push(client); }
@@ -270,7 +284,17 @@ function openQarz(i){
 document.getElementById('formQarz').onsubmit = ()=>{
   const summa = getVal('qarzSumma'); if(!summa) return;
   const c = data[currentIndex];
-  if(Number(c.price)>0){ c.qty = Number(c.qty||0) + (summa / Number(c.price||1)); } // soddalashtirilgan
+  if(Number(c.price)>0){
+    // Avvalgi mantiq: qarz summasi bo‘yicha qty ni oshirish
+    c.qty = Number(c.qty||0) + (summa / Number(c.price||1));
+  } else {
+    // Agar bazaviy narx yo‘q bo‘lsa, uni 1 dona narx deb qabul qilolmaymiz – tarixga bir dona yozamiz
+    (c.history ||= []).push({
+      date: new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10),
+      item: 'Qarz (narx aniqlanmagan)',
+      qty: 1, price: summa, note: ''
+    });
+  }
   save(); refresh();
 };
 
@@ -285,19 +309,14 @@ document.getElementById('formTolov').onsubmit = ()=>{
   save(); refresh();
 };
 
-/* ====== Tarix (yangi) ====== */
-let histIndex = null;
+/* ====== Tarix ====== */
 function openHistory(i){
   histIndex = i;
   const c = data[i];
-  // tarix massivini bor/yoki yaratib qo'yamiz:
   if(!Array.isArray(c.history)) c.history = [];
-  // sarlavha
   document.getElementById('histWho').textContent = `${c.name||''} — ${c.phone||''}`;
-  // sanaga bugungi kun
   const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
   document.getElementById('h_date').value = new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
-  // formani tozalash
   ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
   renderHistoryList();
   dlgHistory.showModal();
@@ -322,11 +341,10 @@ function renderHistoryList(){
 }
 function delHist(idx){
   data[histIndex].history.splice(idx,1);
-  save(); renderHistoryList();
+  save(); renderHistoryList(); refresh();
 }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
-// Tarix formasi
 document.getElementById('histForm').addEventListener('submit', (e)=>{
   e.preventDefault();
   const rec = {
@@ -339,9 +357,8 @@ document.getElementById('histForm').addEventListener('submit', (e)=>{
   if(!rec.date || !rec.item){ alert('Sana va tovar nomi majburiy.'); return; }
   data[histIndex].history.push(rec);
   save();
-  // formani tozalaymiz (sanani o‘zgartirmaymiz)
   ['h_item','h_qty','h_price','h_note'].forEach(id=>{ const el=document.getElementById(id); el.value=''; el.dataset.raw=''; });
-  renderHistoryList();
+  renderHistoryList(); refresh();
 });
 
 // Tarix raqamli inputlarini formatlash
@@ -372,7 +389,7 @@ document.getElementById('fileImport').addEventListener('change', (e)=>{
   r.readAsText(f);
 });
 
-/* ====== Inputlarga formatlash hodisalari ====== */
+/* ====== Input formatlash hodisalari ====== */
 ['f_qty','f_price','f_given','qarzSumma','tolovSumma'].forEach(id=>{
   document.getElementById(id).addEventListener('input', fmtInput);
 });
