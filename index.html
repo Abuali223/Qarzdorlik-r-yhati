@@ -1,278 +1,257 @@
-<!doctype html>
-<html lang="uz">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Qarzdorlik va To‘lovlar</title>
-  <style>
-    :root{
-      --bg:#0e1116; --panel:#151a22; --muted:#8a94a6; --text:#e6eefc;
-      --accent:#4f8cff; --accent-2:#22c55e; --warn:#ef4444;
-      --border:#232936; --chip:#1d2430; --radius:12px;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);
-         font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
-    .container{max-width:1200px;margin:24px auto;padding:0 16px}
-    header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-    .brand{font-weight:700}
-    .toolbar{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-    button{border:1px solid var(--border);background:var(--chip);color:var(--text);
-           padding:8px 14px;border-radius:10px;cursor:pointer;transition:.2s}
-    button:hover{filter:brightness(1.08)}
-    .btn-green{background:#0f2316;color:#c8f7d1}
-    .btn-blue{background:#112033;color:#cde4ff}
-    .btn-red{background:#2a1010;color:#ffd0d0}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 20px}
-    .stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
-    .stat h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
-    .stat .num{font-size:22px;font-weight:700}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid var(--border)}
-    th{color:var(--muted);background:rgba(255,255,255,.02)}
-    .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-    dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);padding:0;max-width:520px;width:calc(100% - 24px)}
-    dialog::backdrop{background:rgba(0,0,0,.55)}
-    .modal-head{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
-    .modal-body{padding:16px;display:grid;gap:12px}
-    .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
-    .field{display:flex;align-items:center;border:1px solid var(--border);background:var(--chip);padding:8px 10px;border-radius:10px;width:100%}
-    .field input{background:transparent;border:0;outline:0;color:var(--text);width:100%}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <div class="brand">Qarzdorlik va To‘lovlar</div>
-      <div class="toolbar">
-        <button id="btnAdd" class="btn-green">+ Mijoz qo‘shish</button>
-        <button id="btnExport">Eksport</button>
-        <label class="btn">
-          Import <input id="fileImport" type="file" accept="application/json" hidden>
-        </label>
-      </div>
-    </header>
+<!-- ======= Xaridlar tarixi (sana bilan) — mavjud saytga ziyon yetkazmasdan qo‘shiladigan modul ======= -->
+<style>
+  /* Minimal uslub (saytingizga to‘qnash kelmasligi uchun prefikslar bilan) */
+  .xh-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:99999}
+  .xh-backdrop[hidden]{display:none}
+  .xh-modal{background:#fff;max-width:960px;width:95%;border-radius:10px;padding:16px;box-shadow:0 10px 25px rgba(0,0,0,.2)}
+  .xh-modal h3{margin:0 0 8px 0}
+  .xh-row{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
+  .xh-row label{font-size:12px;color:#444;display:block;margin-bottom:4px}
+  .xh-row input,.xh-row textarea{padding:8px;border:1px solid #ddd;border-radius:8px;min-width:180px}
+  .xh-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+  .xh-btn{border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
+  .xh-btn.primary{background:#1976d2;color:#fff}
+  .xh-btn.ghost{background:#f2f2f2}
+  .xh-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+  .xh-table th,.xh-table td{border-bottom:1px solid #eee;padding:8px;text-align:left;vertical-align:top}
+  .xh-badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#efefef;font-size:12px}
+  @media (max-width:600px){ .xh-row input,.xh-row textarea{min-width:unset;width:100%} }
+</style>
 
-    <section class="stats">
-      <div class="stat"><h3>Jami qarz</h3><div class="num" id="statQarz">0</div></div>
-      <div class="stat"><h3>Qaytgan</h3><div class="num" id="statTolov">0</div></div>
-      <div class="stat"><h3>Qoldiq</h3><div class="num" id="statQoldiq">0</div></div>
-    </section>
-
-    <table>
+<!-- Tarixni ko‘rish modali -->
+<div id="xh-history" class="xh-backdrop" hidden>
+  <div class="xh-modal">
+    <h3>Xaridlar tarixi — <span id="xh-name"></span> <span class="xh-badge" id="xh-phone"></span></h3>
+    <table class="xh-table">
       <thead>
         <tr>
-          <th>#</th><th>Ism</th><th>Telefon</th>
-          <th>Tovar (dona)</th><th>Narx</th><th><b>Jami summa</b></th>
-          <th>Berilgan</th><th>Qoldiq</th><th>Amal</th>
+          <th>Sana</th><th>Tovar</th><th>Dona</th><th>Narx (1 dona)</th><th>Jami</th><th>Izoh</th><th>Amal</th>
         </tr>
       </thead>
-      <tbody id="tbody"></tbody>
+      <tbody id="xh-tbody"></tbody>
     </table>
+    <div class="xh-actions">
+      <button class="xh-btn ghost" id="xh-close">Yopish</button>
+      <button class="xh-btn primary" id="xh-add">Xarid qo‘shish</button>
+    </div>
   </div>
+</div>
 
-  <!-- Qo'shish / Tahrirlash -->
-  <dialog id="dlgAddEdit">
-    <div class="modal-head" id="dlgTitle">Mijoz ma’lumoti</div>
-    <form method="dialog" id="formAddEdit">
-      <div class="modal-body">
-        <label class="field"><input id="f_name" placeholder="Ism" required></label>
-        <label class="field"><input id="f_phone" placeholder="Telefon raqam (mas: 97 123 45 67)"></label>
-        <label class="field"><input id="f_qty" type="text" placeholder="Tovar soni"></label>
-        <label class="field"><input id="f_price" type="text" placeholder="Tovar narxi"></label>
-        <label class="field"><input id="f_given" type="text" placeholder="Berilgan summa"></label>
+<!-- Xarid qo‘shish modali -->
+<div id="xp-add" class="xh-backdrop" hidden>
+  <div class="xh-modal">
+    <h3>Yangi xarid</h3>
+    <div class="xh-row">
+      <div>
+        <label>Mijoz</label>
+        <input id="xp-name" type="text" readonly>
       </div>
-      <div class="modal-foot">
-        <button type="button" onclick="dlgAddEdit.close()">Bekor</button>
-        <button class="btn-green">Saqlash</button>
+      <div>
+        <label>Telefon</label>
+        <input id="xp-phone" type="text" readonly>
       </div>
-    </form>
-  </dialog>
-
-  <!-- Qarz -->
-  <dialog id="dlgQarz">
-    <div class="modal-head">Qarz qo‘shish</div>
-    <form method="dialog" id="formQarz">
-      <div class="modal-body">
-        <label class="field"><input id="qarzSumma" type="text" placeholder="Qarz summa"></label>
+      <div>
+        <label>Sana</label>
+        <input id="xp-date" type="date">
       </div>
-      <div class="modal-foot">
-        <button type="button" onclick="dlgQarz.close()">Bekor</button>
-        <button class="btn-blue">Tasdiqlash</button>
+    </div>
+    <div class="xh-row">
+      <div>
+        <label>Tovar nomi</label>
+        <input id="xp-item" type="text" placeholder="Masalan: Shakar 1kg">
       </div>
-    </form>
-  </dialog>
-
-  <!-- To'lov -->
-  <dialog id="dlgTolov">
-    <div class="modal-head">To‘lov kiritish</div>
-    <form method="dialog" id="formTolov">
-      <div class="modal-body">
-        <label class="field"><input id="tolovSumma" type="text" placeholder="To‘lov summa"></label>
+      <div>
+        <label>Dona / miqdor</label>
+        <input id="xp-qty" type="number" min="0" step="1" value="1">
       </div>
-      <div class="modal-foot">
-        <button type="button" onclick="dlgTolov.close()">Bekor</button>
-        <button class="btn-green">Tasdiqlash</button>
+      <div>
+        <label>Narx (1 dona uchun)</label>
+        <input id="xp-price" type="number" min="0" step="0.01" value="0">
       </div>
-    </form>
-  </dialog>
+    </div>
+    <div class="xh-row" style="width:100%">
+      <div style="flex:1">
+        <label>Izoh (ixtiyoriy)</label>
+        <textarea id="xp-note" rows="2" style="width:100%"></textarea>
+      </div>
+    </div>
+    <div class="xh-actions">
+      <button class="xh-btn ghost" id="xp-cancel">Bekor</button>
+      <button class="xh-btn primary" id="xp-save">Saqlash</button>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ====== Saqlash/yuklash (localStorage) ====== */
-const STORAGE_KEY = 'qarz_tolov_app_v2';
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-function load(){
-  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch(e){ return []; }
-}
+/* ======= Xaridlar tarixi moduli (localStorage: purchaseHistory_v1) — NARSA HECH NARSANI BUZMAYDI ======= */
+(function(){
+  const STORAGE_KEY = 'purchaseHistory_v1';
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const tzOffsetMs = (new Date()).getTimezoneOffset()*60000;
+  const todayLocal = () => new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
+  const money = n => (Number(n||0)).toLocaleString('uz-UZ');
 
-/* ====== Ma'lumot va yordamchilar ====== */
-let data = load();            // {name, phone, qty, price, given}
-let currentIndex = null;      // tanlangan mijoz
-let editMode = false;
+  let CURRENT_KEY = null; // "phone|name"
 
-const tbody = document.getElementById('tbody');
-const fmt = n => (Number(n)||0).toLocaleString('uz-UZ');
+  function loadDB(){
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function saveDB(db){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  }
+  function keyOf(phone, name){
+    const p = (phone||'').replace(/\D/g,''); // raqamlarni ajratamiz
+    return p + '|' + (name||'').trim();
+  }
+  function getList(db, key){
+    if(!db[key]) db[key] = [];
+    return db[key];
+  }
 
-/* Kiritishda formatlash (minglik ajratish) */
-function fmtInput(e){
-  let val = e.target.value.replace(/[^\d]/g,''); // faqat raqam
-  if(val===''){ e.target.dataset.raw=''; e.target.value=''; return; }
-  e.target.dataset.raw = val;
-  e.target.value = fmt(val);
-}
-function getVal(id){
-  const el = document.getElementById(id);
-  return Number(el.dataset.raw || el.value.replace(/[^\d]/g,'') || 0);
-}
+  // === Modallar
+  const historyModal = $('#xh-history');
+  const addModal = $('#xp-add');
 
-/* Jadvalni yangilash */
-function refresh(){
-  tbody.innerHTML='';
-  let jamiQarz=0, jamiTolov=0, jamiQoldiq=0;
+  function openHistory(name, phone){
+    CURRENT_KEY = keyOf(phone, name);
+    $('#xh-name').textContent = name||'';
+    $('#xh-phone').textContent = phone||'';
+    renderHistory();
+    historyModal.hidden = false;
+  }
+  function closeHistory(){ historyModal.hidden = true; }
 
-  data.forEach((c,i)=>{
-    const jami = c.qty * c.price;        // Jami summa (qty × price)
-    const qoldiq = Math.max(0, jami - c.given);
+  function openAdd(){
+    const [phone, name] = CURRENT_KEY.split('|').length===2
+      ? [CURRENT_KEY.split('|')[0], CURRENT_KEY.split('|')[1]]
+      : ['', ''];
+    $('#xp-name').value = name || $('#xh-name').textContent || '';
+    $('#xp-phone').value = $('#xh-phone').textContent || '';
+    $('#xp-date').value = todayLocal();
+    $('#xp-item').value = '';
+    $('#xp-qty').value = 1;
+    $('#xp-price').value = 0;
+    $('#xp-note').value = '';
+    addModal.hidden = false;
+  }
+  function closeAdd(){ addModal.hidden = true; }
 
-    jamiQarz  += jami;
-    jamiTolov += c.given;
-    jamiQoldiq+= qoldiq;
+  function renderHistory(){
+    const db = loadDB();
+    const list = getList(db, CURRENT_KEY).slice().sort((a,b)=> (a.date>b.date?-1:1));
+    const tb = $('#xh-tbody');
+    tb.innerHTML = '';
+    list.forEach((x, i)=>{
+      const tr = document.createElement('tr');
+      const total = (Number(x.qty||0) * Number(x.price||0));
+      tr.innerHTML = `
+        <td>${x.date||''}</td>
+        <td>${x.item||''}</td>
+        <td>${x.qty||0}</td>
+        <td>${money(x.price||0)}</td>
+        <td><b>${money(total)}</b></td>
+        <td>${x.note?String(x.note).replace(/</g,'&lt;'):''}</td>
+        <td><button class="xh-btn ghost" data-del="${i}">O‘chirish</button></td>
+      `;
+      tb.appendChild(tr);
+    });
+    // delete handlers
+    tb.querySelectorAll('button[data-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = Number(btn.getAttribute('data-del'));
+        const db2 = loadDB();
+        const arr = getList(db2, CURRENT_KEY);
+        arr.splice(idx, 1);
+        saveDB(db2);
+        renderHistory();
+      });
+    });
+  }
 
-    tbody.insertAdjacentHTML('beforeend', `
-      <tr>
-        <td>${i+1}</td>
-        <td>${c.name}</td>
-        <td>${c.phone||''}</td>
-        <td>${fmt(c.qty)}</td>
-        <td>${fmt(c.price)}</td>
-        <td><b>${fmt(jami)}</b></td>
-        <td>${fmt(c.given)}</td>
-        <td><b>${fmt(qoldiq)}</b></td>
-        <td class="row-actions">
-          <button class="btn-blue"  onclick="openQarz(${i})">Qarz</button>
-          <button class="btn-green" onclick="openTolov(${i})">To‘lov</button>
-          <button onclick="edit(${i})">Tahrirlash</button>
-          <button class="btn-red"  onclick="delRow(${i})">O‘chirish</button>
-        </td>
-      </tr>
-    `);
+  // === Add form
+  $('#xp-save').addEventListener('click', ()=>{
+    const rec = {
+      date: $('#xp-date').value || todayLocal(),
+      item: $('#xp-item').value.trim(),
+      qty: Number($('#xp-qty').value||0),
+      price: Number($('#xp-price').value||0),
+      note: $('#xp-note').value.trim()
+    };
+    if(!rec.item){ alert('Tovar nomini kiriting.'); return; }
+    const db = loadDB();
+    const list = getList(db, CURRENT_KEY);
+    list.push(rec);
+    saveDB(db);
+    closeAdd();
+    renderHistory();
   });
+  $('#xp-cancel').addEventListener('click', closeAdd);
+  $('#xh-add').addEventListener('click', openAdd);
+  $('#xh-close').addEventListener('click', closeHistory);
 
-  document.getElementById('statQarz').textContent   = fmt(jamiQarz);
-  document.getElementById('statTolov').textContent  = fmt(jamiTolov);
-  document.getElementById('statQoldiq').textContent = fmt(jamiQoldiq);
-}
+  // === Jadvaldagi har bir mijoz qatoriga "Tarix" tugmasini ulash
+  function attachButtons(){
+    // Sahifadagi asosiy jadvalni topamiz
+    const table = document.querySelector('table');
+    if(!table) return;
 
-/* ====== Qo'shish ====== */
-document.getElementById('btnAdd').onclick = ()=>{
-  editMode = false;
-  document.getElementById('dlgTitle').textContent = "Mijoz qo‘shish";
-  document.getElementById('formAddEdit').reset();
-  ['f_qty','f_price','f_given'].forEach(id=>{ const el=document.getElementById(id); el.dataset.raw=''; el.value=''; });
-  dlgAddEdit.showModal();
-};
-document.getElementById('formAddEdit').onsubmit = ()=>{
-  const client = {
-    name : document.getElementById('f_name').value.trim(),
-    phone: document.getElementById('f_phone').value.trim(),
-    qty  : getVal('f_qty'),
-    price: getVal('f_price'),
-    given: getVal('f_given')
-  };
-  if(editMode){ data[currentIndex] = client; }
-  else{ data.push(client); }
-  save(); refresh();
-};
+    // Sarlavhalar asosida ustun indekslarini aniqlaymiz
+    const headerRow = table.tHead ? table.tHead.rows[0] : table.querySelector('tr');
+    if(!headerRow) return;
+    const headers = Array.from(headerRow.cells).map(th=> (th.textContent||'').trim());
+    const idxName = headers.findIndex(t=> /Ism/i.test(t));
+    const idxPhone = headers.findIndex(t=> /Telefon/i.test(t));
+    const idxAmal = headers.findIndex(t=> /Amal/i.test(t));
+    if(idxName===-1 || idxPhone===-1) return;
 
-/* ====== Tahrirlash ====== */
-function edit(i){
-  editMode = true; currentIndex = i;
-  document.getElementById('dlgTitle').textContent = "Mijozni tahrirlash";
-  const c = data[i];
-  document.getElementById('f_name').value  = c.name;
-  document.getElementById('f_phone').value = c.phone || '';
-  const setNum = (id,val)=>{ const el=document.getElementById(id); el.dataset.raw=String(val); el.value=fmt(val); };
-  setNum('f_qty',  c.qty);
-  setNum('f_price',c.price);
-  setNum('f_given',c.given);
-  dlgAddEdit.showModal();
-}
+    const bodyRows = table.tBodies.length ? table.tBodies[0].rows : table.querySelectorAll('tbody tr');
+    Array.from(bodyRows).forEach(tr=>{
+      if(tr.dataset.xhReady) return; // bir marta ulaymiz
+      tr.dataset.xhReady = '1';
 
-/* ====== Qarz / To'lov ====== */
-function openQarz(i){
-  currentIndex = i;
-  const el = document.getElementById('qarzSumma'); el.value=''; el.dataset.raw='';
-  dlgQarz.showModal();
-}
-document.getElementById('formQarz').onsubmit = ()=>{
-  const summa = getVal('qarzSumma'); if(!summa) return;
-  const c = data[currentIndex];
-  if(c.price>0){ c.qty += (summa / c.price); } // qarz → tovar qiymatiga qo‘shildi
-  save(); refresh();
-};
+      const nameCell = tr.cells[idxName];
+      const phoneCell = tr.cells[idxPhone];
+      const actionCell = idxAmal!==-1 ? tr.cells[idxAmal] : tr.cells[tr.cells.length-1];
 
-function openTolov(i){
-  currentIndex = i;
-  const el = document.getElementById('tolovSumma'); el.value=''; el.dataset.raw='';
-  dlgTolov.showModal();
-}
-document.getElementById('formTolov').onsubmit = ()=>{
-  const summa = getVal('tolovSumma'); if(!summa) return;
-  data[currentIndex].given += summa;
-  save(); refresh();
-};
+      if(!nameCell || !phoneCell || !actionCell) return;
 
-/* ====== O'chirish ====== */
-function delRow(i){ data.splice(i,1); save(); refresh(); }
+      const name = (nameCell.innerText||'').trim();
+      const phone = (phoneCell.innerText||'').trim();
 
-/* ====== Import / Export ====== */
-document.getElementById('btnExport').onclick = ()=>{
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'qarz_tolov_backup.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-};
-document.getElementById('fileImport').addEventListener('change', (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{ try{
-      const d = JSON.parse(r.result);
-      if(Array.isArray(d)){ data = d; save(); refresh(); alert('Import muvaffaqiyatli ✅'); }
-      else alert('Fayl formati noto‘g‘ri');
-    }catch{ alert('Faylni o‘qishda xato'); } };
-  r.readAsText(f);
-});
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'xh-btn ghost';
+      btn.style.marginLeft = '6px';
+      btn.textContent = 'Tarix';
+      btn.addEventListener('click', ()=> openHistory(name, phone));
+      actionCell.appendChild(btn);
+    });
+  }
 
-/* ====== Inputlarga formatlash hodisalari ====== */
-['f_qty','f_price','f_given','qarzSumma','tolovSumma'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', fmtInput);
-});
+  // Dinamik o‘zgarishlar uchun kuzatuvchi (mijoz qo‘shilganda ham tugma paydo bo‘ladi)
+  const obs = new MutationObserver(()=> setTimeout(attachButtons, 0));
+  obs.observe(document.body, {childList:true, subtree:true});
+  // Dastlabki ulash
+  attachButtons();
 
-/* Boshlang'ich chizish */
-refresh();
+  // === Ixtiyoriy: “Qarz qo‘shish” oynasiga (agar bo‘lsa) Jami ni auto hisoblash uchun qulaylik ===
+  // Agar saytingizda qarz qo‘shish modalida miqdor/narx inputlari bo‘lsa, Jami = Miqdor × Narx ni hisoblab turish
+  // (selectorlar mos kelmasa, bu qism hech narsani qilmaydi — xavfsiz)
+  function enhanceDebtIfExists(){
+    const qty = document.querySelector('input[name*="qty"], input#qty, input[placeholder*="Miqdor" i]');
+    const price = document.querySelector('input[name*="price"], input#price, input[placeholder*="Narx" i]');
+    const total = document.querySelector('input[name*="total"], input#total, input[placeholder*="Jami" i]');
+    if(!qty || !price || !total) return;
+    const recalc = () => { total.value = (Number(qty.value||0)*Number(price.value||0)).toFixed(2); };
+    qty.addEventListener('input', recalc);
+    price.addEventListener('input', recalc);
+  }
+  const obs2 = new MutationObserver(()=> setTimeout(enhanceDebtIfExists,0));
+  obs2.observe(document.body,{childList:true,subtree:true});
+  enhanceDebtIfExists();
+
+})();
 </script>
-</body>
-</html>
+<!-- ======= /Xaridlar tarixi moduli ======= -->
