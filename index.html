@@ -24,7 +24,6 @@
     .btn-blue{background:#112033;color:#cde4ff}
     .btn-red{background:#2a1010;color:#ffd0d0}
 
-    /* stats */
     .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 20px}
     @media (max-width:1024px){ .stats{grid-template-columns:repeat(2,1fr)} }
     @media (max-width:560px){ .stats{grid-template-columns:1fr} }
@@ -32,7 +31,6 @@
     .stat h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
     .stat .num{font-size:22px;font-weight:700}
 
-    /* filters */
     .filters{display:grid;grid-template-columns:repeat(6,1fr) auto;gap:8px;margin:8px 0 16px}
     @media (max-width:900px){ .filters{grid-template-columns:repeat(3,1fr) auto} }
     @media (max-width:560px){ .filters{grid-template-columns:1fr 1fr} }
@@ -40,7 +38,6 @@
            padding:8px 10px;border-radius:10px;width:100%}
     .field input,.field select{background:transparent;border:0;outline:0;color:var(--text);width:100%}
 
-    /* table */
     .table-wrap{width:100%;overflow:auto;border-radius:10px}
     table{width:100%;border-collapse:collapse;min-width:940px}
     th,td{padding:10px;border-bottom:1px solid var(--border)}
@@ -48,7 +45,6 @@
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
     tr.warn td{background:rgba(239,68,68,.08)}
 
-    /* dialogs */
     dialog{border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);
            padding:0;max-width:980px;width:calc(100% - 24px)}
     dialog::backdrop{background:rgba(0,0,0,.55)}
@@ -56,7 +52,6 @@
     .modal-body{padding:16px;display:grid;gap:12px}
     .modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 
-    /* admin panel */
     #adminPanel{display:none;background:var(--panel);border:1px solid var(--border);border-radius:12px;margin-top:16px}
     .admin-tabs{display:flex;gap:6px;border-bottom:1px solid var(--border);padding:8px}
     .admin-tabs button{background:#111a28}
@@ -88,7 +83,6 @@
       <div class="stat"><h3>Jami harajat</h3><div class="num" id="statExpense">0</div></div>
     </section>
 
-    <!-- Kengaytirilgan qidiruv/filtr -->
     <div class="filters">
       <label class="field"><input id="fSearch" placeholder="Qidiruv: ism yoki telefon"></label>
       <label class="field"><input id="fMinDebt" type="text" placeholder="Min qoldiq (so‘m)"></label>
@@ -100,8 +94,8 @@
           <option value="nodebt">Qarzi yo‘qlar</option>
         </select>
       </label>
-      <label class="field"><input id="fFrom" type="date" title="Boshlanish sana (mijoz yaratilgan)"></label>
-      <label class="field"><input id="fTo" type="date" title="Tugash sana (mijoz yaratilgan)"></label>
+      <label class="field"><input id="fFrom" type="date" title="Boshlanish sana"></label>
+      <label class="field"><input id="fTo" type="date" title="Tugash sana"></label>
       <button id="btnSort" class="btn-blue" title="Eng yangi tepada">Saralash: Yangi ↑</button>
     </div>
 
@@ -118,7 +112,7 @@
       </table>
     </div>
 
-    <!-- ADMIN PANEL (faqat admin ko‘radi) -->
+    <!-- ADMIN PANEL -->
     <section id="adminPanel">
       <div class="admin-tabs">
         <button data-tab="alerts">Ogohlantirishlar</button>
@@ -281,6 +275,18 @@
     </div>
   </dialog>
 
+  <!-- Mijoz bo'yicha eksport -->
+  <dialog id="dlgCliExport">
+    <div class="modal-head">Mijoz bo‘yicha eksport</div>
+    <div class="modal-body" id="cliExpWho" style="opacity:.85"></div>
+    <div class="modal-foot">
+      <button id="cliExpJson">JSON</button>
+      <button id="cliExpXlsx" class="btn-blue">Excel</button>
+      <button id="cliExpPdf"  class="btn-blue">PDF</button>
+      <button onclick="dlgCliExport.close()">Yopish</button>
+    </div>
+  </dialog>
+
 <script>
 /* ====== localStorage va holat ====== */
 const STORAGE_KEY = 'qarz_tolov_v5';
@@ -325,13 +331,6 @@ function phoneMask(e){
   if(digits === '') { e.target.value = '+998 '; return; }
   e.target.value = formatUZPhoneFromDigits(digits);
 }
-// Bugun oy yakunimi?
-function isMonthEndToday(){
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  return tomorrow.getDate() === 1; // ertaga 1-bo'lsa, bugun oy oxiri
-}
 
 /* Kasrli input formatlash */
 function fmtInput(e){
@@ -345,6 +344,12 @@ function fmtInput(e){
 function getVal(id){
   const el = document.getElementById(id);
   return parseNum(el?.dataset?.raw ?? el?.value);
+}
+
+/* Oy yakuni? */
+function isMonthEndToday(){
+  const t = new Date(), tm = new Date(t); tm.setDate(t.getDate()+1);
+  return tm.getDate()===1;
 }
 
 /* Hisob-kitob */
@@ -396,12 +401,8 @@ function refresh(){
     const t = totalsForClient(c);
     jamiQarz += t.totalDebt; jamiTolov += t.given; jamiQoldiq += t.remain;
 
-   // yangi: qizil bo'lishi faqat oy yakunida
-const trClass = (isMonthEndToday() && t.remain > 0) ? 'class="warn"' : '';
-// Agar 30 kunlik kechikish mantiqini ham saqlamoqchi bo'lsangiz:
-/// const lastPay = c.lastPayAt || 0;
-/// const overdue = lastPay ? (Date.now()-lastPay>30*86400000 && t.remain>0) : (t.remain>0);
-/// const trClass = (isMonthEndToday() && overdue) ? 'class="warn"' : '';
+    // qizil highlight FAQAT oy oxirida
+    const trClass = (isMonthEndToday() && t.remain>0) ? 'class="warn"' : '';
 
     tbody.insertAdjacentHTML('beforeend', `
       <tr ${trClass}>
@@ -420,6 +421,7 @@ const trClass = (isMonthEndToday() && t.remain > 0) ? 'class="warn"' : '';
           <button class="btn-green" onclick="openTolov(${idx})">To‘lov</button>
           <button onclick="edit(${idx})">Tahrirlash</button>
           <button class="btn-red" onclick="delRow(${idx})">O‘chirish</button>
+          <button onclick="openClientExport(${idx})">Eksport</button>
         </td>
       </tr>
     `);
@@ -529,7 +531,6 @@ document.getElementById('tovarForm').addEventListener('submit',(e)=>{
   const rec={ date:document.getElementById('t_date').value,
               qty:getVal('t_qty'), price:getVal('t_price'),
               note:document.getElementById('t_note').value.trim() };
-  if(!rec.date||!rec.item||!rec.qty||!rec.price){ /* item yo'q, bitta mahsulot rejimi */ }
   if(!rec.date||!rec.qty||!rec.price){ alert('Sana/miqdor/narx majburiy.'); return; }
   c.history.push(rec); saveClients(); refresh(); dlgTovar.close();
 });
@@ -603,15 +604,14 @@ document.getElementById('btnOpenArchive')?.addEventListener('click', ()=>{
   renderArchive(); dlgArchive.showModal();
 });
 
-/* Ogohlantirishlar (jadvaldagi qizil qatorlar va ro'yxat) */
+/* Ogohlantirishlar ro'yxati */
 function renderAlerts(){
   const wrap = document.getElementById('alertsList'); if(!wrap) return;
   const rows = [];
   data.forEach(c=>{
     const t = totalsForClient(c);
-    const lp = c.lastPayAt||0;
-    const lazy = t.remain>0 && (lp===0 || Date.now()-lp>30*86400000);
-    if(lazy){
+    // ogohlantirish ro'yxati: qoldiq bor mijozlar
+    if(t.remain>0){
       rows.push(`<div>⚠️ <b>${escapeHtml(c.name||'Noma’lum')}</b> — qoldiq: <b>${fmt(t.remain)}</b> so‘m</div>`);
     }
   });
@@ -649,7 +649,7 @@ function checkMonthEndReminder(){
       <p>Hisobotni Excel yoki PDF’ga eksport qilishni unutmang ✅</p>
     `;
     dlgReminder.showModal();
-    localStorage.setItem(key, '1'); // shu oyda ko'rsatildi
+    localStorage.setItem(key, '1');
   }
 }
 
@@ -691,13 +691,12 @@ document.getElementById('btnAdmin').addEventListener('click', ()=>{
     if(pass!=='admin123'){ alert('Parol noto‘g‘ri!'); return; }
     isAdmin=true;
     document.getElementById('adminPanel').style.display='block';
-    // Bugungi sana
     const tzOffsetMs=(new Date()).getTimezoneOffset()*60000;
     const today=new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
     const ed=document.getElementById('e_date'); if(ed) ed.value=today;
 
     renderExpenses(); renderArchive(); renderAlerts(); drawCharts();
-    checkMonthEndReminder(); // oy oxirida esdalikni ko‘rsatish
+    checkMonthEndReminder(); // oy oxirida esdalik
   }else{
     const p=document.getElementById('adminPanel');
     p.style.display = p.style.display==='none' ? 'block' : 'none';
@@ -716,7 +715,7 @@ document.querySelectorAll('.admin-tabs button').forEach(btn=>{
   });
 });
 
-/* Eksport/Import (faqat admin panelda) */
+/* Eksport/Import (umumiy) */
 document.getElementById('btnExportJson')?.addEventListener('click', ()=>{
   const payload = { clients: data, expenses, _schema:'v3' };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -761,7 +760,7 @@ function normalizeClient(x){
   };
 }
 
-/* Excel eksport */
+/* Excel eksport (umumiy) */
 document.getElementById('btnExportXlsx')?.addEventListener('click', ()=>{
   const rows = data.map(c=>{
     const t=totalsForClient(c);
@@ -776,7 +775,7 @@ document.getElementById('btnExportXlsx')?.addEventListener('click', ()=>{
   XLSX.writeFile(wb, 'hisobot.xlsx');
 });
 
-/* PDF eksport */
+/* PDF eksport (umumiy) */
 document.getElementById('btnExportPdf')?.addEventListener('click', ()=>{
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({unit:'pt', format:'a4'});
@@ -819,7 +818,6 @@ let barChart, pieChart;
 function drawCharts(){
   const ctx1=document.getElementById('barMonthly'); const ctx2=document.getElementById('pieDebtors');
   if(!ctx1||!ctx2) return;
-  // Oylik aggr.
   const map = {}; // {YYYY-MM: {debt, pay, exp}}
   data.forEach(c=>{
     const baseMonth = new Date(c.createdAt||Date.now()); const ym = baseMonth.toISOString().slice(0,7);
@@ -847,7 +845,6 @@ function drawCharts(){
     options:{responsive:true, plugins:{legend:{labels:{color:'#cbd5e1'}}}, scales:{x:{ticks:{color:'#cbd5e1'}}, y:{ticks:{color:'#cbd5e1'}}}}
   });
 
-  // Pie: qarzdorlar ulushi
   const debtors = data.map(c=>({name:c.name||'N/N', remain:totalsForClient(c).remain}))
                       .filter(x=>x.remain>0)
                       .sort((a,b)=>b.remain-a.remain).slice(0,8);
@@ -859,17 +856,94 @@ function drawCharts(){
   });
 }
 
-/* Input hodisalari */
+/* ====== Mijoz bo'yicha eksport ====== */
+let cliExpIndex = null;
+function openClientExport(i){
+  cliExpIndex = i;
+  const c = data[i] || {};
+  document.getElementById('cliExpWho').textContent =
+    `${c.name || 'Noma’lum'} — ${c.phone || ''}`;
+  dlgCliExport.showModal();
+}
+function payloadForClient(c){
+  const t = totalsForClient(c);
+  return {
+    name: c.name || '',
+    phone: c.phone || '',
+    qty_base: c.qty || 0,
+    price_base: c.price || 0,
+    given: c.given || 0,
+    totals: t,
+    history: Array.isArray(c.history) ? c.history : [],
+    createdAt: c.createdAt || null,
+    lastPayAt: c.lastPayAt || null
+  };
+}
+document.getElementById('cliExpJson').addEventListener('click', ()=>{
+  if(cliExpIndex==null) return;
+  const c = data[cliExpIndex];
+  const blob = new Blob([JSON.stringify(payloadForClient(c), null, 2)],
+                        {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(c.name||'mijoz').replace(/\s+/g,'_')}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+});
+document.getElementById('cliExpXlsx').addEventListener('click', ()=>{
+  if(cliExpIndex==null) return;
+  const c = data[cliExpIndex];
+  const t = totalsForClient(c);
+  const wb = XLSX.utils.book_new();
+  const info = [{
+    Ism:c.name, Telefon:c.phone,
+    "Boshlang'ich miqdor": c.qty, "Narx (1 dona)": c.price,
+    "Berilgan": c.given, "Jami summa": t.totalDebt, "Qoldiq": t.remain
+  }];
+  const wsInfo = XLSX.utils.json_to_sheet(info);
+  XLSX.utils.book_append_sheet(wb, wsInfo, 'Umumiy');
+  const hist = (c.history||[]).map(h=>({
+    Sana: h.date, Miqdor: h.qty, Narx: h.price, Jami: (Number(h.qty||0)*Number(h.price||0)), Izoh: h.note||''
+  }));
+  const wsHist = XLSX.utils.json_to_sheet(hist);
+  XLSX.utils.book_append_sheet(wb, wsHist, 'Tarix');
+  const fname = `${(c.name||'mijoz').replace(/\s+/g,'_')}.xlsx`;
+  XLSX.writeFile(wb, fname);
+});
+document.getElementById('cliExpPdf').addEventListener('click', ()=>{
+  if(cliExpIndex==null) return;
+  const { jsPDF } = window.jspdf;
+  const c = data[cliExpIndex];
+  const t = totalsForClient(c);
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  let y = 40;
+  doc.setFontSize(14);
+  doc.text(`Mijoz hisobot: ${c.name || ''}`, 40, y); y+=18;
+  doc.setFontSize(10);
+  doc.text(`Telefon: ${c.phone || ''}`, 40, y); y+=14;
+  doc.text(`Jami summa: ${fmt(t.totalDebt)}   Berilgan: ${fmt(t.given)}   Qoldiq: ${fmt(t.remain)}`, 40, y); y+=20;
+  doc.setFontSize(12);
+  doc.text('Tarix:', 40, y); y+=14;
+  doc.setFontSize(10);
+  const addRow = (arr)=>{ let x=40; arr.forEach((v,i)=>{ doc.text(String(v), x, y); x += (i===0?110:90); }); y+=16; };
+  addRow(['Sana','Miqdor','Narx','Jami','Izoh']);
+  (c.history||[]).forEach(h=>{
+    addRow([h.date||'', h.qty||0, h.price||0, (Number(h.qty||0)*Number(h.price||0)), (h.note||'').slice(0,28)]);
+    if(y>760){ doc.addPage(); y=40; }
+  });
+  const fname = `${(c.name||'mijoz').replace(/\s+/g,'_')}.pdf`;
+  doc.save(fname);
+});
+
+/* start */
 ['f_qty','f_price','f_given','h_qty','h_price','t_qty','t_price','qarzSumma','tolovSumma','e_amount']
   .forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', fmtInput); });
 const phoneEl=document.getElementById('f_phone');
 phoneEl.addEventListener('input', phoneMask);
 phoneEl.addEventListener('focus', phoneMask);
 
-/* start */
 refresh();
 
-/* Demo (agar bo‘sh bo‘lsa) */
+/* Demo (bo'sh bo'lsa) */
 if(data.length===0){
   data=[{name:'Akrom aka', phone:'+998 90 111 22 33', qty:1.5, price:12000.5, given:0, createdAt: Date.now(), history:[
     {date:new Date().toISOString().slice(0,10), qty:1.5, price:12000.5, note:''}
