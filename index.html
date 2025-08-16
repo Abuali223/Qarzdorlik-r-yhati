@@ -65,6 +65,7 @@
     @media (max-width:900px){ .grid-2{grid-template-columns:1fr} }
     canvas{background:#0c1119;border:1px solid var(--border);border-radius:10px;padding:8px}
   </style>
+
   <!-- Charts / Excel / PDF libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -162,6 +163,7 @@
           <button id="btnExportXlsx" class="btn-blue">Excel (xlsx)</button>
           <button id="btnExportPdf" class="btn-blue">PDF</button>
           <label class="btn">Import <input id="fileImport" type="file" accept="application/json" hidden></label>
+          <button id="btnOpenArchive" class="btn-red">Arxiv</button>
         </div>
       </div>
     </section>
@@ -267,6 +269,15 @@
     <div class="modal-foot">
       <button id="btnClearArchive" class="btn-red">Arxivni tozalash</button>
       <button type="button" onclick="dlgArchive.close()">Yopish</button>
+    </div>
+  </dialog>
+
+  <!-- Esdalik / Ogohlantirish (oy yakuni) -->
+  <dialog id="dlgReminder">
+    <div class="modal-head">Oy yakuni esdaligi</div>
+    <div class="modal-body" id="reminderBody"></div>
+    <div class="modal-foot">
+      <button onclick="dlgReminder.close()">Yopish</button>
     </div>
   </dialog>
 
@@ -509,6 +520,7 @@ document.getElementById('tovarForm').addEventListener('submit',(e)=>{
   const rec={ date:document.getElementById('t_date').value,
               qty:getVal('t_qty'), price:getVal('t_price'),
               note:document.getElementById('t_note').value.trim() };
+  if(!rec.date||!rec.item||!rec.qty||!rec.price){ /* item yo'q, bitta mahsulot rejimi */ }
   if(!rec.date||!rec.qty||!rec.price){ alert('Sana/miqdor/narx majburiy.'); return; }
   c.history.push(rec); saveClients(); refresh(); dlgTovar.close();
 });
@@ -578,8 +590,11 @@ document.getElementById('btnClearArchive')?.addEventListener('click', ()=>{
   const ok = confirm('Arxivni butunlay tozalaysizmi?'); if(!ok) return;
   archived=[]; saveArchive(); renderArchive();
 });
+document.getElementById('btnOpenArchive')?.addEventListener('click', ()=>{
+  renderArchive(); dlgArchive.showModal();
+});
 
-/* Ogohlantirishlar */
+/* Ogohlantirishlar (jadvaldagi qizil qatorlar va ro'yxat) */
 function renderAlerts(){
   const wrap = document.getElementById('alertsList'); if(!wrap) return;
   const rows = [];
@@ -592,6 +607,41 @@ function renderAlerts(){
     }
   });
   wrap.innerHTML = rows.length? rows.join('') : 'Hozircha ogohlantirish yo‘q.';
+}
+
+/* Oy yakuni esdaligi (faqat admin) */
+function _monthKey(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  return `reminder_shown_${y}${m}`;
+}
+function checkMonthEndReminder(){
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate()+1);
+
+  if (tomorrow.getDate() === 1) { // oy oxirgi kuni
+    const key = _monthKey(today);
+    if (localStorage.getItem(key) === '1') return;
+
+    const jamiQarz   = data.reduce((s,c)=> s + totalsForClient(c).totalDebt, 0);
+    const jamiTolov  = data.reduce((s,c)=> s + totalsForClient(c).given, 0);
+    const jamiQoldiq = data.reduce((s,c)=> s + totalsForClient(c).remain, 0);
+    const jamiHarajat= expenses.reduce((s,x)=> s + parseNum(x.amount), 0);
+
+    document.getElementById('reminderBody').innerHTML = `
+      <p><b>Bugun oy yakunlandi!</b></p>
+      <ul>
+        <li>Jami qarz: <b>${fmt(jamiQarz)}</b></li>
+        <li>Qaytgan: <b>${fmt(jamiTolov)}</b></li>
+        <li>Qoldiq: <b>${fmt(jamiQoldiq)}</b></li>
+        <li>Jami harajat: <b>${fmt(jamiHarajat)}</b></li>
+      </ul>
+      <p>Hisobotni Excel yoki PDF’ga eksport qilishni unutmang ✅</p>
+    `;
+    dlgReminder.showModal();
+    localStorage.setItem(key, '1'); // shu oyda ko'rsatildi
+  }
 }
 
 /* Harajatlar (admin panel) */
@@ -636,9 +686,10 @@ document.getElementById('btnAdmin').addEventListener('click', ()=>{
     const tzOffsetMs=(new Date()).getTimezoneOffset()*60000;
     const today=new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
     const ed=document.getElementById('e_date'); if(ed) ed.value=today;
+
     renderExpenses(); renderArchive(); renderAlerts(); drawCharts();
+    checkMonthEndReminder(); // oy oxirida esdalikni ko‘rsatish
   }else{
-    // admin panelni ko‘rsat/yashir toggle
     const p=document.getElementById('adminPanel');
     p.style.display = p.style.display==='none' ? 'block' : 'none';
   }
@@ -677,7 +728,10 @@ document.getElementById('fileImport')?.addEventListener('change', (e)=>{
     if(!importedClients && !importedExpenses){ alert('Faylda mijozlar yoki harajatlar topilmadi'); return; }
     if(importedClients)  data = importedClients.map(normalizeClient);
     if(importedExpenses) expenses = importedExpenses.map(x=>({
-      date:x.date||x.sana||'', type:x.type||x.tur||'', amount:parseNum(x.amount||x.sum||x.summa||x.price), note:x.note||x.izoh||''
+      date:x.date||x.sana||'',
+      type:x.type||x.tur||'',
+      amount:parseNum(x.amount||x.sum||x.summa||x.price),
+      note:x.note||x.izoh||''
     }));
     saveClients(); saveExpenses(); refresh(); renderExpenses();
     alert(`Import muvaffaqiyatli ✅\nMijozlar: ${data.length}\nHarajatlar: ${expenses.length}`);
@@ -707,7 +761,6 @@ document.getElementById('btnExportXlsx')?.addEventListener('click', ()=>{
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, 'Mijozlar');
-  // Expenses sheet
   const erows = expenses.map(x=>({ Sana:x.date, Tur:x.type, Summa:x.amount, Izoh:x.note }));
   const es = XLSX.utils.json_to_sheet(erows);
   XLSX.utils.book_append_sheet(wb, es, 'Harajatlar');
@@ -796,9 +849,6 @@ function drawCharts(){
     options:{responsive:true, plugins:{legend:{labels:{color:'#cbd5e1'}}}}
   });
 }
-
-/* Importga yordamchi */
-function pick(obj, keys){ for(const k of keys){ if(obj!=null && obj[k]!=null) return obj[k]; } }
 
 /* Input hodisalari */
 ['f_qty','f_price','f_given','h_qty','h_price','t_qty','t_price','qarzSumma','tolovSumma','e_amount']
