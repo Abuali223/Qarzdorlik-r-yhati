@@ -18,7 +18,7 @@
     .brand{font-weight:700}
     .toolbar{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
     button{border:1px solid var(--border);background:var(--chip);color:var(--text);
-           padding:8px 14px;border-radius:10px;cursor:pointer;transition:.2s; white-space:nowrap}
+           padding:8px 14px;border-radius:10px;cursor:pointer;transition:.2s;white-space:nowrap}
     button:hover{filter:brightness(1.08)}
     .btn-green{background:#0f2316;color:#c8f7d1}
     .btn-blue{background:#112033;color:#cde4ff}
@@ -59,12 +59,16 @@
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     @media (max-width:900px){ .grid-2{grid-template-columns:1fr} }
     canvas{background:#0c1119;border:1px solid var(--border);border-radius:10px;padding:8px}
+
+    /* yashirin (PDF uchun) canvaslar */
+    .hidden-canvases{position:absolute;left:-99999px;top:-99999px;height:0;overflow:hidden}
   </style>
 
-  <!-- Charts / Excel / PDF libraries -->
+  <!-- Kutubxonalar -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -112,7 +116,7 @@
       </table>
     </div>
 
-    <!-- ADMIN PANEL -->
+    <!-- ADMIN PANEL (faqat parol bilan) -->
     <section id="adminPanel">
       <div class="admin-tabs">
         <button data-tab="alerts">Ogohlantirishlar</button>
@@ -161,6 +165,12 @@
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- Yashirin canvases (PDF uchun oldindan chizib qo'yamiz) -->
+  <div class="hidden-canvases">
+    <canvas id="barMonthlyHidden" width="900" height="340"></canvas>
+    <canvas id="pieDebtorsHidden" width="500" height="340"></canvas>
   </div>
 
   <!-- Mijoz qo‘shish/tahrirlash -->
@@ -270,9 +280,7 @@
   <dialog id="dlgReminder">
     <div class="modal-head">Oy yakuni esdaligi</div>
     <div class="modal-body" id="reminderBody"></div>
-    <div class="modal-foot">
-      <button onclick="dlgReminder.close()">Yopish</button>
-    </div>
+    <div class="modal-foot"><button onclick="dlgReminder.close()">Yopish</button></div>
   </dialog>
 
   <!-- Mijoz bo'yicha eksport -->
@@ -289,12 +297,12 @@
 
 <script>
 /* ====== localStorage va holat ====== */
-const STORAGE_KEY = 'qarz_tolov_v5';
+const STORAGE_KEY = 'qarz_tolov_v6';
 const EXP_KEY     = 'harajatlar_v3';
 const ARCHIVE_KEY = 'clients_archive_v1';
-function saveClients(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function saveClients(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); chartsSchedule(); }
 function loadClients(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }catch{ return []; } }
-function saveExpenses(){ localStorage.setItem(EXP_KEY, JSON.stringify(expenses)); }
+function saveExpenses(){ localStorage.setItem(EXP_KEY, JSON.stringify(expenses)); chartsSchedule(); }
 function loadExpenses(){ try{ return JSON.parse(localStorage.getItem(EXP_KEY)) || []; }catch{ return []; } }
 function saveArchive(){ localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archived)); }
 function loadArchive(){ try{ return JSON.parse(localStorage.getItem(ARCHIVE_KEY)) || []; }catch{ return []; } }
@@ -306,9 +314,11 @@ let currentIndex = null, histIndex = null, editMode = false;
 let currentSortDesc = true;
 let filters = { q:'', minDebt:'', maxDebt:'', debtState:'all', from:'', to:'' };
 
+/* ====== yordamchilar ====== */
 const tbody = document.getElementById('tbody');
 const fmt = (n)=> Number(n||0).toLocaleString('uz-UZ', {maximumFractionDigits:3});
 const parseNum = (v)=>{ const s=String(v??'').replace(',', '.').replace(/[^0-9.\-]/g,''); if(!s) return 0; const p=s.split('.'); return parseFloat(p.length>2?p[0]+'.'+p.slice(1).join(''):s)||0; };
+function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
 /* Telefon maskasi */
 function formatUZPhoneFromDigits(digits){
@@ -401,14 +411,13 @@ function refresh(){
     const t = totalsForClient(c);
     jamiQarz += t.totalDebt; jamiTolov += t.given; jamiQoldiq += t.remain;
 
-    // qizil highlight FAQAT oy oxirida
     const trClass = (isMonthEndToday() && t.remain>0) ? 'class="warn"' : '';
 
     tbody.insertAdjacentHTML('beforeend', `
       <tr ${trClass}>
         <td>${idx+1}</td>
-        <td>${c.name||''}</td>
-        <td><a href="tel:${(c.phone||'').replace(/\s/g,'')}" style="color:inherit">${c.phone||''}</a></td>
+        <td>${escapeHtml(c.name||'')}</td>
+        <td><a href="tel:${(c.phone||'').replace(/\s/g,'')}" style="color:inherit">${escapeHtml(c.phone||'')}</a></td>
         <td>${fmt(t.totalQty)}</td>
         <td>${fmt(c.price||0)}</td>
         <td><b>${fmt(t.totalDebt)}</b></td>
@@ -433,6 +442,7 @@ function refresh(){
   document.getElementById('statExpense').textContent= fmt(expenses.reduce((s,x)=>s+parseNum(x.amount),0));
 
   renderAlerts();
+  chartsSchedule(); // ma'lumot o'zgarganda diagrammalarni yangilash
 }
 
 /* Qo‘shish/tahrirlash */
@@ -513,7 +523,6 @@ document.getElementById('histForm').addEventListener('submit',(e)=>{
   data[histIndex].history.push(rec); saveClients(); renderHistory(); refresh();
 });
 function delHist(i){ data[histIndex].history.splice(i,1); saveClients(); renderHistory(); refresh(); }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
 /* Tovar (tez) */
 function openTovar(i){
@@ -610,15 +619,14 @@ function renderAlerts(){
   const rows = [];
   data.forEach(c=>{
     const t = totalsForClient(c);
-    // ogohlantirish ro'yxati: qoldiq bor mijozlar
     if(t.remain>0){
-      rows.push(`<div>⚠️ <b>${escapeHtml(c.name||'Noma’lum')}</b> — qoldiq: <b>${fmt(t.remain)}</b> so‘m</div>`);
+      rows.push(`<div>⚠️ <b>${escapeHtml(c.name||'N/N')}</b> — qoldiq: <b>${fmt(t.remain)}</b> so‘m</div>`);
     }
   });
   wrap.innerHTML = rows.length? rows.join('') : 'Hozircha ogohlantirish yo‘q.';
 }
 
-/* Oy yakuni esdaligi (faqat admin) */
+/* Oy yakuni esdaligi (faqat oy oxiri) */
 function _monthKey(d){
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');
@@ -629,15 +637,13 @@ function checkMonthEndReminder(){
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate()+1);
 
-  if (tomorrow.getDate() === 1) { // oy oxirgi kuni
+  if (tomorrow.getDate() === 1) {
     const key = _monthKey(today);
     if (localStorage.getItem(key) === '1') return;
-
     const jamiQarz   = data.reduce((s,c)=> s + totalsForClient(c).totalDebt, 0);
     const jamiTolov  = data.reduce((s,c)=> s + totalsForClient(c).given, 0);
     const jamiQoldiq = data.reduce((s,c)=> s + totalsForClient(c).remain, 0);
     const jamiHarajat= expenses.reduce((s,x)=> s + parseNum(x.amount), 0);
-
     document.getElementById('reminderBody').innerHTML = `
       <p><b>Bugun oy yakunlandi!</b></p>
       <ul>
@@ -646,7 +652,7 @@ function checkMonthEndReminder(){
         <li>Qoldiq: <b>${fmt(jamiQoldiq)}</b></li>
         <li>Jami harajat: <b>${fmt(jamiHarajat)}</b></li>
       </ul>
-      <p>Hisobotni Excel yoki PDF’ga eksport qilishni unutmang ✅</p>
+      <p>Hisobotni Excel yoki PDF’ga eksport qiling ✅</p>
     `;
     dlgReminder.showModal();
     localStorage.setItem(key, '1');
@@ -683,7 +689,7 @@ document.getElementById('expForm')?.addEventListener('submit',(e)=>{
   expenses.push(rec); saveExpenses(); renderExpenses(); refresh();
 });
 
-/* Admin panel ochish */
+/* Admin panel ochish (faqat UI) */
 let isAdmin=false;
 document.getElementById('btnAdmin').addEventListener('click', ()=>{
   if(!isAdmin){
@@ -695,8 +701,8 @@ document.getElementById('btnAdmin').addEventListener('click', ()=>{
     const today=new Date(Date.now()-tzOffsetMs).toISOString().slice(0,10);
     const ed=document.getElementById('e_date'); if(ed) ed.value=today;
 
-    renderExpenses(); renderArchive(); renderAlerts(); drawCharts();
-    checkMonthEndReminder(); // oy oxirida esdalik
+    renderExpenses(); renderArchive(); renderAlerts();
+    drawChartsVisible(); // ko'rinadigan chartlar
   }else{
     const p=document.getElementById('adminPanel');
     p.style.display = p.style.display==='none' ? 'block' : 'none';
@@ -710,12 +716,131 @@ document.querySelectorAll('.admin-tabs button').forEach(btn=>{
     ['alerts','stats','expenses','export'].forEach(id=>{
       document.getElementById('tab-'+id).style.display = (id===tab)?'block':'none';
     });
-    if(tab==='stats') drawCharts();
+    if(tab==='stats') drawChartsVisible();
     if(tab==='expenses') renderExpenses();
   });
 });
 
-/* Eksport/Import (umumiy) */
+/* === PDF ni saqlash/ulashish (Telegram/Files/iOS friendly) === */
+async function saveOrSharePdf(doc, filename){
+  try{
+    const blob = doc.output('blob');
+    try{
+      const file = new File([blob], filename, {type:'application/pdf'});
+      if (navigator.canShare && navigator.canShare({files:[file]})) {
+        await navigator.share({files:[file], title: filename});
+        return;
+      }
+    }catch(_){}
+    try{
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, '_blank');
+      if (win){ setTimeout(()=>URL.revokeObjectURL(blobUrl), 20000); return; }
+    }catch(_){}
+    try{
+      const dataUrl = doc.output('dataurlstring');
+      const win2 = window.open(dataUrl, '_blank');
+      if (win2) return;
+    }catch(_){}
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.target = '_blank';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1500);
+  }catch(err){
+    alert('PDFni saqlash/ulashishda xato: ' + (err?.message || err));
+  }
+}
+
+/* === Diagrammalar: ko'rinadigan va yashirin versiya === */
+let barChart=null, pieChart=null;        // ko‘rinadigan (admin)
+let pdfBarImg=null, pdfPieImg=null;      // PDF uchun tayyor rasm
+
+function monthlyAgg(){
+  const map = {}; // {YYYY-MM: {debt, pay, exp}}
+  data.forEach(c=>{
+    const ym = new Date(c.createdAt||Date.now()).toISOString().slice(0,7);
+    if(!map[ym]) map[ym]={debt:0,pay:0,exp:0};
+    const t=totalsForClient(c);
+    map[ym].debt += t.totalDebt;
+    map[ym].pay  += t.given;
+  });
+  expenses.forEach(x=>{
+    const ym=(x.date||'').slice(0,7); if(!ym) return;
+    if(!map[ym]) map[ym]={debt:0,pay:0,exp:0};
+    map[ym].exp += parseNum(x.amount);
+  });
+  const labels=Object.keys(map).sort();
+  return { labels, debt:labels.map(k=>map[k].debt), pay:labels.map(k=>map[k].pay), exp:labels.map(k=>map[k].exp) };
+}
+function topDebtors(){
+  return data.map(c=>({name:c.name||'N/N', remain:totalsForClient(c).remain}))
+             .filter(x=>x.remain>0).sort((a,b)=>b.remain-a.remain).slice(0,8);
+}
+/* ko'rinadigan chartlar (admin stats ichida) */
+function drawChartsVisible(){
+  const ctx1=document.getElementById('barMonthly');
+  const ctx2=document.getElementById('pieDebtors');
+  if(!ctx1||!ctx2) return;
+  const agg=monthlyAgg();
+  if(barChart) barChart.destroy();
+  barChart = new Chart(ctx1, {
+    type:'bar',
+    data:{labels:agg.labels, datasets:[
+      {label:'Jami qarz', data:agg.debt},
+      {label:'Qaytgan',   data:agg.pay },
+      {label:'Harajat',   data:agg.exp }
+    ]},
+    options:{responsive:true, plugins:{legend:{labels:{color:'#cbd5e1'}}}, scales:{x:{ticks:{color:'#cbd5e1'}}, y:{ticks:{color:'#cbd5e1'}}}}
+  });
+  const list=topDebtors();
+  if(pieChart) pieChart.destroy();
+  pieChart = new Chart(ctx2, {
+    type:'pie',
+    data:{ labels:list.map(x=>x.name), datasets:[{data:list.map(x=>x.remain)}] },
+    options:{responsive:true, plugins:{legend:{labels:{color:'#cbd5e1'}}}}
+  });
+}
+/* yashirin chartlar (PDF uchun — admin ochmasa ham) */
+function drawChartsHidden(){
+  const ctx1=document.getElementById('barMonthlyHidden').getContext('2d');
+  const ctx2=document.getElementById('pieDebtorsHidden').getContext('2d');
+  const agg=monthlyAgg();
+  const list=topDebtors();
+
+  // bar
+  const bar = new Chart(ctx1, {
+    type:'bar',
+    data:{labels:agg.labels, datasets:[
+      {label:'Jami qarz', data:agg.debt},
+      {label:'Qaytgan',   data:agg.pay },
+      {label:'Harajat',   data:agg.exp }
+    ]},
+    options:{animation:false, responsive:false}
+  });
+  // pie
+  const pie = new Chart(ctx2, {
+    type:'pie',
+    data:{ labels:list.map(x=>x.name), datasets:[{data:list.map(x=>x.remain)}] },
+    options:{animation:false, responsive:false}
+  });
+
+  // rasmga aylantirib kechiktirmay olaylik
+  pdfBarImg = bar.toBase64Image();
+  pdfPieImg = pie.toBase64Image();
+
+  // resurslarni tozalash
+  bar.destroy(); pie.destroy();
+}
+/* ma'lumot o‘zgarganda 100ms keyin qayta hisoblab chizamiz (debounce) */
+let chartsTimer=null;
+function chartsSchedule(){
+  clearTimeout(chartsTimer);
+  chartsTimer=setTimeout(()=>{ drawChartsHidden(); }, 100);
+}
+function chartImage(chart){ try { return chart?.toBase64Image?.(); } catch { return null; } }
+
+/* ====== Eksport/Import (umumiy) ====== */
 document.getElementById('btnExportJson')?.addEventListener('click', ()=>{
   const payload = { clients: data, expenses, _schema:'v3' };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -775,86 +900,64 @@ document.getElementById('btnExportXlsx')?.addEventListener('click', ()=>{
   XLSX.writeFile(wb, 'hisobot.xlsx');
 });
 
-/* PDF eksport (umumiy) */
-document.getElementById('btnExportPdf')?.addEventListener('click', ()=>{
+/* PDF eksport (umumiy, jadval+diagramma) */
+document.getElementById('btnExportPdf')?.addEventListener('click', async ()=>{
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({unit:'pt', format:'a4'});
-  doc.setFontSize(14);
-  doc.text('Qarzdorlik va Harajatlar hisobot', 40, 40);
+  let y = 40;
+
+  doc.setFontSize(16);
+  doc.text('Qarzdorlik va Harajatlar hisobot', 40, y); y+=10;
   doc.setFontSize(10);
-  let y=65;
-  const addRow=(arr)=>{ let x=40; arr.forEach((t,i)=>{ doc.text(String(t), x, y); x+= (i===0?130:90); }); y+=16; };
-  doc.text('Mijozlar:', 40, y); y+=14;
-  addRow(['Ism','Telefon','Jami','Berilgan','Qoldiq']);
-  data.forEach(c=>{
-    const t=totalsForClient(c);
-    addRow([c.name, c.phone, fmt(t.totalDebt), fmt(t.given), fmt(t.remain)]);
-    if(y>760){ doc.addPage(); y=40; }
+  const jamiQarz   = data.reduce((s,c)=> s + totalsForClient(c).totalDebt, 0);
+  const jamiTolov  = data.reduce((s,c)=> s + totalsForClient(c).given, 0);
+  const jamiQoldiq = data.reduce((s,c)=> s + totalsForClient(c).remain, 0);
+  const jamiHarajat= expenses.reduce((s,x)=> s + Number(x.amount||0), 0);
+  doc.text(`Jami qarz: ${fmt(jamiQarz)}    Qaytgan: ${fmt(jamiTolov)}    Qoldiq: ${fmt(jamiQoldiq)}    Harajat: ${fmt(jamiHarajat)}`, 40, (y+=18));
+
+  // Mijozlar jadvali
+  const clientsRows = data.map(c=>{
+    const t = totalsForClient(c);
+    return [c.name||'', c.phone||'', fmt(t.totalDebt), fmt(t.given), fmt(t.remain)];
   });
-  y+=20; doc.text('Harajatlar:', 40, y); y+=14;
-  addRow(['Sana','Tur','Summa','Izoh']);
-  expenses.forEach(x=>{
-    addRow([x.date, x.type, fmt(x.amount), (x.note||'').slice(0,30)]);
-    if(y>760){ doc.addPage(); y=40; }
+  doc.autoTable({
+    head: [['Ism','Telefon','Jami','Berilgan','Qoldiq']],
+    body: clientsRows,
+    startY: y+10,
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [17,32,51] }
   });
-  doc.save('hisobot.pdf');
+  y = doc.lastAutoTable.finalY + 18;
+
+  // Harajatlar jadvali
+  const expenseRows = expenses.map(x=>[
+    x.date||'', x.type||'', fmt(x.amount||0), x.note||''
+  ]);
+  doc.autoTable({
+    head: [['Sana','Tur','Summa','Izoh']],
+    body: expenseRows,
+    startY: y,
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [17,32,51] }
+  });
+
+  // Diagrammalar: admin ochilmagan bo‘lsa ham tayyor rasm bor (yashirin canvasta)
+  const pageW = doc.internal.pageSize.getWidth();
+  const imgW = (pageW - 40*3) / 2, imgH = 180, left=40;
+  const barImg = pdfBarImg || chartImage(barChart);
+  const pieImg = pdfPieImg || chartImage(pieChart);
+
+  if(barImg || pieImg){
+    doc.addPage();
+    y = 40; doc.setFontSize(12); doc.text('Diagrammalar', 40, y); y+=12;
+    if(barImg) doc.addImage(barImg, 'PNG', left, y, imgW, imgH);
+    if(pieImg) doc.addImage(pieImg, 'PNG', left+imgW+40, y, imgW, imgH);
+  }
+
+  await saveOrSharePdf(doc, 'hisobot.pdf');
 });
-
-/* Qidiruv/filtr hodisalari */
-document.getElementById('fSearch').addEventListener('input', e=>{ filters.q=e.target.value; refresh(); });
-document.getElementById('fMinDebt').addEventListener('input', e=>{ filters.minDebt=e.target.value; refresh(); });
-document.getElementById('fMaxDebt').addEventListener('input', e=>{ filters.maxDebt=e.target.value; refresh(); });
-document.getElementById('fDebtState').addEventListener('change', e=>{ filters.debtState=e.target.value; refresh(); });
-document.getElementById('fFrom').addEventListener('change', e=>{ filters.from=e.target.value; refresh(); });
-document.getElementById('fTo').addEventListener('change', e=>{ filters.to=e.target.value; refresh(); });
-document.getElementById('btnSort').addEventListener('click', ()=>{
-  currentSortDesc=!currentSortDesc;
-  document.getElementById('btnSort').textContent = currentSortDesc ? 'Saralash: Yangi ↑' : 'Saralash: Eski ↓';
-  refresh();
-});
-
-/* Grafiklar */
-let barChart, pieChart;
-function drawCharts(){
-  const ctx1=document.getElementById('barMonthly'); const ctx2=document.getElementById('pieDebtors');
-  if(!ctx1||!ctx2) return;
-  const map = {}; // {YYYY-MM: {debt, pay, exp}}
-  data.forEach(c=>{
-    const baseMonth = new Date(c.createdAt||Date.now()); const ym = baseMonth.toISOString().slice(0,7);
-    if(!map[ym]) map[ym]={debt:0,pay:0,exp:0};
-    const t=totalsForClient(c);
-    map[ym].debt += t.totalDebt;
-    map[ym].pay  += t.given;
-  });
-  expenses.forEach(x=>{
-    const ym=(x.date||'').slice(0,7); if(!ym) return;
-    if(!map[ym]) map[ym]={debt:0,pay:0,exp:0};
-    map[ym].exp += parseNum(x.amount);
-  });
-  const labels=Object.keys(map).sort();
-  const debt=labels.map(k=>map[k].debt), pay=labels.map(k=>map[k].pay), exp=labels.map(k=>map[k].exp);
-
-  if(barChart) barChart.destroy();
-  barChart = new Chart(ctx1, {
-    type:'bar',
-    data:{labels, datasets:[
-      {label:'Jami qarz', data:debt},
-      {label:'Qaytgan',   data:pay},
-      {label:'Harajat',   data:exp}
-    ]},
-    options:{responsive:true, plugins:{legend:{labels:{color:'#cbd5e1'}}}, scales:{x:{ticks:{color:'#cbd5e1'}}, y:{ticks:{color:'#cbd5e1'}}}}
-  });
-
-  const debtors = data.map(c=>({name:c.name||'N/N', remain:totalsForClient(c).remain}))
-                      .filter(x=>x.remain>0)
-                      .sort((a,b)=>b.remain-a.remain).slice(0,8);
-  if(pieChart) pieChart.destroy();
-  pieChart = new Chart(ctx2, {
-    type:'pie',
-    data:{ labels:debtors.map(x=>x.name), datasets:[{data:debtors.map(x=>x.remain)}] },
-    options:{responsive:true, plugins:{legend:{labels:{color:'#cbd5e1'}}}}
-  });
-}
 
 /* ====== Mijoz bo'yicha eksport ====== */
 let cliExpIndex = null;
@@ -909,29 +1012,50 @@ document.getElementById('cliExpXlsx').addEventListener('click', ()=>{
   const fname = `${(c.name||'mijoz').replace(/\s+/g,'_')}.xlsx`;
   XLSX.writeFile(wb, fname);
 });
-document.getElementById('cliExpPdf').addEventListener('click', ()=>{
+document.getElementById('cliExpPdf').addEventListener('click', async ()=>{
   if(cliExpIndex==null) return;
   const { jsPDF } = window.jspdf;
   const c = data[cliExpIndex];
   const t = totalsForClient(c);
+
   const doc = new jsPDF({unit:'pt', format:'a4'});
-  let y = 40;
-  doc.setFontSize(14);
-  doc.text(`Mijoz hisobot: ${c.name || ''}`, 40, y); y+=18;
+  doc.setFontSize(16);
+  doc.text(`Mijoz hisobot: ${c.name || ''}`, 40, 40);
   doc.setFontSize(10);
-  doc.text(`Telefon: ${c.phone || ''}`, 40, y); y+=14;
-  doc.text(`Jami summa: ${fmt(t.totalDebt)}   Berilgan: ${fmt(t.given)}   Qoldiq: ${fmt(t.remain)}`, 40, y); y+=20;
-  doc.setFontSize(12);
-  doc.text('Tarix:', 40, y); y+=14;
-  doc.setFontSize(10);
-  const addRow = (arr)=>{ let x=40; arr.forEach((v,i)=>{ doc.text(String(v), x, y); x += (i===0?110:90); }); y+=16; };
-  addRow(['Sana','Miqdor','Narx','Jami','Izoh']);
-  (c.history||[]).forEach(h=>{
-    addRow([h.date||'', h.qty||0, h.price||0, (Number(h.qty||0)*Number(h.price||0)), (h.note||'').slice(0,28)]);
-    if(y>760){ doc.addPage(); y=40; }
+  doc.text(`Telefon: ${c.phone || ''}`, 40, 58);
+  doc.text(`Jami: ${fmt(t.totalDebt)}   Berilgan: ${fmt(t.given)}   Qoldiq: ${fmt(t.remain)}`, 40, 74);
+
+  const body = (c.history||[]).map(h=>[
+    h.date || '',
+    fmt(h.qty || 0),
+    fmt(h.price || 0),
+    fmt((Number(h.qty||0) * Number(h.price||0))),
+    h.note || ''
+  ]);
+  doc.autoTable({
+    head: [['Sana','Miqdor','Narx','Jami','Izoh']],
+    body,
+    startY: 96,
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [17,32,51] }
   });
+
   const fname = `${(c.name||'mijoz').replace(/\s+/g,'_')}.pdf`;
-  doc.save(fname);
+  await saveOrSharePdf(doc, fname);
+});
+
+/* Qidiruv/filtr hodisalari */
+document.getElementById('fSearch').addEventListener('input', e=>{ filters.q=e.target.value; refresh(); });
+document.getElementById('fMinDebt').addEventListener('input', e=>{ filters.minDebt=e.target.value; refresh(); });
+document.getElementById('fMaxDebt').addEventListener('input', e=>{ filters.maxDebt=e.target.value; refresh(); });
+document.getElementById('fDebtState').addEventListener('change', e=>{ filters.debtState=e.target.value; refresh(); });
+document.getElementById('fFrom').addEventListener('change', e=>{ filters.from=e.target.value; refresh(); });
+document.getElementById('fTo').addEventListener('change', e=>{ filters.to=e.target.value; refresh(); });
+document.getElementById('btnSort').addEventListener('click', ()=>{
+  currentSortDesc=!currentSortDesc;
+  document.getElementById('btnSort').textContent = currentSortDesc ? 'Saralash: Yangi ↑' : 'Saralash: Eski ↓';
+  refresh();
 });
 
 /* start */
@@ -942,13 +1066,15 @@ phoneEl.addEventListener('input', phoneMask);
 phoneEl.addEventListener('focus', phoneMask);
 
 refresh();
+drawChartsHidden();         // PDF uchun dastlab chizamiz
+checkMonthEndReminder();    // oy oxiri esdaligi
 
 /* Demo (bo'sh bo'lsa) */
 if(data.length===0){
   data=[{name:'Akrom aka', phone:'+998 90 111 22 33', qty:1.5, price:12000.5, given:0, createdAt: Date.now(), history:[
     {date:new Date().toISOString().slice(0,10), qty:1.5, price:12000.5, note:''}
   ]}];
-  saveClients(); refresh();
+  saveClients(); refresh(); chartsSchedule();
 }
 </script>
 </body>
