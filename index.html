@@ -383,7 +383,21 @@ document.getElementById('histForm').addEventListener('submit',(e)=>{
 });
 function delHist(i){ data[histIndex].history.splice(i,1); saveClients(); renderHistory(); refresh(); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+/* Mijozni o‘chirish */
+function delRow(i){
+  if (i == null || i < 0 || i >= data.length) return;
+  const c = data[i];
+  const ok = confirm(`"${c?.name || 'Mijoz'}" yozuvini o‘chirilsinmi?`);
+  if(!ok) return;
 
+  // Joriy indekslar ta'sir qilmasligi uchun tozalaymiz
+  if (currentIndex === i) currentIndex = null;
+  if (histIndex === i) histIndex = null;
+
+  data.splice(i, 1);
+  saveClients();
+  refresh();
+}
 /* Tovar (tez kiritish) */
 function openTovar(i){
   currentIndex=i;
