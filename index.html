@@ -325,6 +325,13 @@ function phoneMask(e){
   if(digits === '') { e.target.value = '+998 '; return; }
   e.target.value = formatUZPhoneFromDigits(digits);
 }
+// Bugun oy yakunimi?
+function isMonthEndToday(){
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  return tomorrow.getDate() === 1; // ertaga 1-bo'lsa, bugun oy oxiri
+}
 
 /* Kasrli input formatlash */
 function fmtInput(e){
@@ -389,10 +396,12 @@ function refresh(){
     const t = totalsForClient(c);
     jamiQarz += t.totalDebt; jamiTolov += t.given; jamiQoldiq += t.remain;
 
-    // Ogohlantirish belgilash: 30 kundan oshgan to'lov bo'lmasa
-    const lastPay = c.lastPayAt || 0;
-    const over = lastPay ? (Date.now()-lastPay>30*86400000 && t.remain>0) : (t.remain>0);
-    const trClass = over ? 'class="warn"' : '';
+   // yangi: qizil bo'lishi faqat oy yakunida
+const trClass = (isMonthEndToday() && t.remain > 0) ? 'class="warn"' : '';
+// Agar 30 kunlik kechikish mantiqini ham saqlamoqchi bo'lsangiz:
+/// const lastPay = c.lastPayAt || 0;
+/// const overdue = lastPay ? (Date.now()-lastPay>30*86400000 && t.remain>0) : (t.remain>0);
+/// const trClass = (isMonthEndToday() && overdue) ? 'class="warn"' : '';
 
     tbody.insertAdjacentHTML('beforeend', `
       <tr ${trClass}>
