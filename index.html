@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qarz Tizimi - Pro</title>
+    <title>Qarz Tizimi - Universal</title>
     
     <script src="https://unpkg.com/feather-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
+        /* ============== DIZAYN (YASHIL PALITRA) ============== */
         :root {
-            /* Palette -06 */
             --col-deep: #2F5233;   
             --col-main: #337B01;   
             --col-soft: #76B947;   
@@ -23,6 +23,7 @@
             --text-main: #2D2D2D;
             --text-muted: #6b7280;
             --border: var(--col-pale);
+            
             --danger: #ef4444;
             --radius: 8px;
             --sidebar-width: 260px;
@@ -38,7 +39,7 @@
         .nav-item:hover { background: var(--col-pale); color: var(--col-deep); }
         .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(51, 123, 1, 0.3); }
 
-        /* Main */
+        /* Main Content */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .top-header { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 32px; justify-content: space-between; background: #fff; }
         .content-area { padding: 32px; overflow-y: auto; height: 100%; }
@@ -62,24 +63,28 @@
         tr:hover td { background: #f9fff9; }
         tr.warn-row td { background: rgba(239, 68, 68, 0.05); }
 
-        /* Dialog */
-        dialog { position: fixed; inset: 0; margin: auto; z-index: 9999; border: none; border-radius: 12px; width: 90%; max-width: 750px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        /* Dialogs */
+        dialog { position: fixed; inset: 0; margin: auto; z-index: 9999; border: none; border-radius: 12px; width: 90%; max-width: 800px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
         dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
         .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; }
         .modal-body { padding: 24px; max-height: 75vh; overflow-y: auto; background: #fcfcfc; }
         .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: #fff; }
 
+        /* Helper Classes */
         .view-section { display: none; }
         .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:translateY(0)} }
-
+        
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 24px; }
         .stat-card { padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
-        .stat-val { font-size: 24px; font-weight: 800; margin-top: 5px; }
+        .stat-val { font-size: 24px; font-weight: 800; margin-top: 5px; color: var(--primary); }
         
         .icon-btn { padding: 6px; border-radius: 6px; border: none; background: none; cursor: pointer; color: var(--text-muted); transition: .2s; }
         .icon-btn:hover { background: var(--col-pale); color: var(--primary); }
         .icon-btn.delete:hover { background: #fee2e2; color: var(--danger); }
+        
+        /* Mahsulot rasmi */
+        .product-img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); }
     </style>
 </head>
 <body>
@@ -116,7 +121,7 @@
                     </div>
                     <div class="stat-card">
                         <div style="font-size:12px; font-weight:600; color:#888">TO'LANGAN</div>
-                        <div class="stat-val" id="st-paid" style="color:var(--primary)">0</div>
+                        <div class="stat-val" id="st-paid">0</div>
                     </div>
                     <div class="stat-card">
                         <div style="font-size:12px; font-weight:600; color:#888">JAMI SAVDO</div>
@@ -139,7 +144,7 @@
                 </div>
                 <div class="card">
                     <table>
-                        <thead><tr><th>Nomi</th><th>Birlik</th><th>Qoldiq</th><th>Narx</th><th style="text-align:right">Amallar</th></tr></thead>
+                        <thead><tr><th>Rasm</th><th>Nomi</th><th>Birlik</th><th>Qoldiq</th><th>Narx</th><th style="text-align:right">Amallar</th></tr></thead>
                         <tbody id="tbody-warehouse"></tbody>
                     </table>
                 </div>
@@ -177,18 +182,9 @@
         <form onsubmit="saveClient(event)">
             <div class="modal-body">
                 <div style="display:grid; gap:15px">
-                    <div>
-                        <label class="input-label">Ism Familiya</label>
-                        <input id="c_name" class="form-control" required>
-                    </div>
-                    <div>
-                        <label class="input-label">Telefon</label>
-                        <input id="c_phone" class="form-control">
-                    </div>
-                    <div>
-                        <label class="input-label">Eski Qarz (Agar bo'lsa)</label>
-                        <input id="c_init" type="number" class="form-control" value="0">
-                    </div>
+                    <div><label class="input-label">Ism Familiya</label><input id="c_name" class="form-control" required></div>
+                    <div><label class="input-label">Telefon</label><input id="c_phone" class="form-control"></div>
+                    <div><label class="input-label">Eski Qarz</label><input id="c_init" type="number" class="form-control" value="0"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -277,10 +273,11 @@
         <form onsubmit="saveProduct(event)">
             <div class="modal-body">
                 <div style="display:grid; gap:15px">
-                    <div>
-                        <label class="input-label">Nomi</label>
-                        <input id="w_name" class="form-control" required>
+                    <div class="full-width">
+                        <label class="input-label">Rasm</label>
+                        <input type="file" id="w_img_file" class="form-control" accept="image/*">
                     </div>
+                    <div><label class="input-label">Nomi</label><input id="w_name" class="form-control" required></div>
                     <div>
                         <label class="input-label">Birlik</label>
                         <select id="w_unit" class="form-control">
@@ -289,19 +286,11 @@
                             <option value="kg">Kg</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="input-label">Qoldiq</label>
-                        <input id="w_qty" type="number" step="any" class="form-control" required>
-                    </div>
-                    <div>
-                        <label class="input-label">Sotish Narxi</label>
-                        <input id="w_price" type="number" class="form-control">
-                    </div>
+                    <div><label class="input-label">Qoldiq</label><input id="w_qty" type="number" step="any" class="form-control" required></div>
+                    <div><label class="input-label">Sotish Narxi</label><input id="w_price" type="number" class="form-control"></div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Saqlash</button>
-            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary">Saqlash</button></div>
         </form>
     </dialog>
 
@@ -364,7 +353,7 @@
 
                 (c.history || []).forEach(h => {
                     if(h.type === 'trade') {
-                        // Hisoblash: Dona summasi + Sm summasi
+                        // Hisoblash: (Dona * Narx) + (Sm * Narx)
                         let cost = (parse(h.qty_dona)*parse(h.price_dona)) + (parse(h.len_sm)*parse(h.price_sm));
                         debt += cost; trade += cost;
                     } else {
@@ -411,18 +400,18 @@
         }
         function delClient(i) { if(confirm("O'chirilsinmi?")) { DB.clients.splice(i,1); DB.save(); } }
 
-        // === TARIX VA SAVDO (TUGRILANGAN QISM) ===
+        // === TARIX VA SAVDO (FIXED) ===
         function openHistory(i) {
             currClientIdx = i;
             $('histClientName').innerText = DB.clients[i].name;
             const sel = $('t_prod'); sel.innerHTML = '<option value="">-- Tanlanmagan --</option>';
             DB.warehouse.forEach(w => sel.innerHTML += `<option value="${w.id}">${w.name} (${w.qty} ${w.unit})</option>`);
             
-            // Inputlarni tozalash
+            // Tozalash
             $('t_qty_dona').value=''; $('t_price_dona').value='';
             $('t_len_sm').value=''; $('t_price_sm').value=''; $('t_note').value='';
             
-            // Inputlarni ochish (blokdan chiqarish)
+            // Inputlarni doim ochiq qilamiz (bloklamaymiz)
             $('t_qty_dona').disabled = false; $('t_len_sm').disabled = false;
 
             renderHistoryTable(); $('dlgHistory').showModal();
@@ -433,24 +422,19 @@
             const w = DB.warehouse.find(x => x.id === id);
             
             if(w) {
+                // Avtomatik narxni qo'yamiz, lekin INPUTLARNI BLOKLAMAYMIZ
                 if(w.unit === 'dona') {
-                    $('t_qty_dona').disabled = false; $('t_qty_dona').focus();
                     $('t_price_dona').value = w.price;
-                    $('t_len_sm').disabled = true; $('t_len_sm').value=''; $('t_price_sm').value='';
                 } else {
-                    $('t_len_sm').disabled = false; $('t_len_sm').focus();
                     $('t_price_sm').value = w.price;
-                    $('t_qty_dona').disabled = true; $('t_qty_dona').value=''; $('t_price_dona').value='';
                 }
-            } else {
-                $('t_qty_dona').disabled=false; $('t_len_sm').disabled=false;
-            }
+            } 
         }
 
         function addTrade(e) {
             e.preventDefault();
             const prodId = $('t_prod').value;
-            // MUHIM: Har ikkala inputni o'qiymiz
+            // Ikkala qiymatni ham olamiz
             const qDona = parse($('t_qty_dona').value);
             const pDona = parse($('t_price_dona').value);
             const qSm = parse($('t_len_sm').value);
@@ -459,15 +443,19 @@
             let pName = $('t_note').value || 'Tovar';
             if(prodId) {
                 const w = DB.warehouse.find(x => x.id === prodId);
-                const req = w.unit==='dona' ? qDona : qSm;
-                if(w.qty < req) { alert("Omborda yetarli emas!"); return; }
-                w.qty -= req;
+                // Ombordan mosini ayiramiz
+                if(w.unit === 'dona' && qDona > 0) {
+                    if(w.qty < qDona) { alert("Omborda dona yetarli emas!"); return; }
+                    w.qty -= qDona;
+                } else if(w.unit !== 'dona' && qSm > 0) {
+                    if(w.qty < qSm) { alert("Omborda sm/kg yetarli emas!"); return; }
+                    w.qty -= qSm;
+                }
                 pName = w.name;
             }
 
-            // Agar ikkalasi ham bo'sh bo'lsa
             if(qDona <= 0 && qSm <= 0) {
-                alert("Iltimos, miqdor kiriting (Dona yoki Sm)");
+                alert("Hech bo'lmasa bitta miqdor kiriting!");
                 return;
             }
 
@@ -484,7 +472,7 @@
             DB.clients[currClientIdx].history.push(rec);
             DB.save(); 
             
-            // Formani tozalash
+            // Tozalash
             $('t_qty_dona').value=''; $('t_len_sm').value=''; $('t_note').value='';
             renderHistoryTable(); 
         }
@@ -548,7 +536,11 @@
             const h = DB.clients[currClientIdx].history[idx];
             if(h.type==='trade' && h.prodId) {
                 const w = DB.warehouse.find(x => x.id === h.prodId);
-                if(w) w.qty += (w.unit==='dona' ? h.qty_dona : h.len_sm);
+                // Ombordan o'chirilganda mosini qaytarish
+                if(w) {
+                    if(w.unit === 'dona') w.qty += h.qty_dona;
+                    else w.qty += h.len_sm;
+                }
             }
             DB.clients[currClientIdx].history.splice(idx,1);
             DB.save(); renderHistoryTable();
@@ -558,7 +550,9 @@
         function renderWarehouse() {
             const tbody = $('tbody-warehouse'); tbody.innerHTML = '';
             DB.warehouse.forEach((w, i) => {
-                tbody.innerHTML += `<tr>
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${w.img || 'https://via.placeholder.com/40'}" class="product-img"></td>
                     <td>${w.name}</td>
                     <td><span style="background:var(--col-pale); padding:2px 6px; border-radius:4px; font-size:12px; color:var(--col-deep)">${w.unit}</span></td>
                     <td style="font-weight:700">${fmt(w.qty)}</td>
@@ -566,12 +560,31 @@
                     <td style="text-align:right">
                         <button class="icon-btn" onclick="editProduct(${i})"><i data-feather="edit"></i></button>
                         <button class="icon-btn delete" onclick="delProduct(${i})"><i data-feather="trash-2"></i></button>
-                    </td></tr>`;
+                    </td>`;
+                tbody.appendChild(tr);
             });
         }
         function openProductModal() { currProdIdx=null; $('dlgProdTitle').innerText="Yangi Mahsulot"; $('w_name').value=''; $('w_qty').value=''; $('w_price').value=''; $('dlgProduct').showModal(); }
         function editProduct(i) { currProdIdx = i; const w = DB.warehouse[i]; $('dlgProdTitle').innerText = "Mahsulotni Tahrirlash"; $('w_name').value = w.name; $('w_unit').value = w.unit; $('w_qty').value = w.qty; $('w_price').value = w.price; $('dlgProduct').showModal(); }
-        function saveProduct(e) { e.preventDefault(); const data = { id: currProdIdx!==null?DB.warehouse[currProdIdx].id:genId(), name:$('w_name').value, unit:$('w_unit').value, qty:parse($('w_qty').value), price:parse($('w_price').value) }; if(currProdIdx!==null) DB.warehouse[currProdIdx]=data; else DB.warehouse.push(data); DB.save(); closeModal('dlgProduct'); }
+        function saveProduct(e) {
+            e.preventDefault();
+            const file = $('w_img_file').files[0];
+            const reader = new FileReader();
+            
+            const finalize = (img) => {
+                const data = {
+                    id: currProdIdx!==null ? DB.warehouse[currProdIdx].id : genId(),
+                    img: img || (currProdIdx!==null ? DB.warehouse[currProdIdx].img : null),
+                    name: $('w_name').value,
+                    unit: $('w_unit').value,
+                    qty: parse($('w_qty').value),
+                    price: parse($('w_price').value)
+                };
+                if(currProdIdx!==null) DB.warehouse[currProdIdx]=data; else DB.warehouse.push(data);
+                DB.save(); closeModal('dlgProduct'); e.target.reset();
+            };
+            if(file) { reader.readAsDataURL(file); reader.onload = () => finalize(reader.result); } else finalize(null);
+        }
         function delProduct(i) { if(confirm("O'chirilsinmi?")) { DB.warehouse.splice(i,1); DB.save(); } }
 
         function renderExpenses() {
