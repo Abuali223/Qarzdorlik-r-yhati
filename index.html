@@ -3,43 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qarz Tizimi - Dashboard</title>
+    <title>Qarz Tizimi - Elegant Dashboard</title>
     
     <script src="https://unpkg.com/feather-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        /* ============== 1. UMUMIY DIZAYN (CSS) ============== */
+        /* ============== 1. UMUMIY DIZAYN & PALITRA ============== */
         :root {
-            /* --- YANGI RANGLAR PALITRASI (Rasm asosida) --- */
-            --col-deep-red: #702C2B;  /* Asosiy urg'u rangi (Primary) */
-            --col-rose: #C56869;      /* Ikkilamchi, hover uchun */
-            --col-peach: #DB9F95;     /* Hoshiyalar va ajratuvchilar */
-            --col-light-pink: #F3D7D4; /* Umumiy fon rangi */
+            /* --- SIZNING PALITRANGIZ --- */
+            --col-dark-red: #702C2B;   /* Asosiy urg'u (Primary) */
+            --col-rose: #C56869;       /* Ikkilamchi (Secondary) */
+            --col-peach: #DB9F95;      /* Hoshiyalar (Border) */
+            --col-blush: #F3D7D4;      /* Och fon (Light bg) */
             
-            --primary: var(--col-deep-red);
+            /* --- TIZIM RANGLARI --- */
+            --primary: var(--col-dark-red);
             --primary-hover: var(--col-rose);
-            --bg-body: var(--col-light-pink);
-            --bg-white: #ffffff;      /* Kartalar uchun oq fon saqlanadi kontrast uchun */
+            --bg-body: #ffffff;        /* TALABINGIZGA BINOAN: OQ FON */
+            --bg-sidebar: #ffffff;     /* Sidebar ham oq */
+            --text-main: #2D2D2D;      /* Asosiy matn */
+            --text-muted: #6b7280;     /* Kulrang matn */
+            --border: var(--col-peach);/* Chiroyli shaftoli rangi chegaralar uchun */
             
-            --text-titles: var(--col-deep-red); /* Sarlavhalar uchun to'q rang */
-            --text-body: #2c1a1a;     /* Asosiy matn o'qishli bo'lishi uchun juda to'q kulrang-qizil */
-            --text-muted: var(--col-rose); /* Yordamchi matnlar */
-            
-            --border-color: var(--col-peach);
-            --danger: #d32f2f;        /* O'chirish uchun standart qizil (lekin palitraga mosroq) */
+            --danger: #ef4444;         /* O'chirish tugmasi uchun */
             --sidebar-width: 260px;
-            --hover-bg: var(--col-light-pink); /* Hover bo'lgandagi fon */
+            --radius: 8px;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
@@ -47,30 +44,29 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
-            color: var(--text-body);
+            color: var(--text-main);
         }
 
         /* ============== 2. SIDEBAR (Chap menyu) ============== */
         .sidebar {
             width: var(--sidebar-width);
-            background-color: var(--bg-white);
-            border-right: 1px solid var(--border-color);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             padding: 24px;
             flex-shrink: 0;
-            transition: transform 0.3s ease;
         }
 
         .brand {
             color: var(--primary);
             font-size: 22px;
             font-weight: 800;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
             display: flex;
             align-items: center;
             gap: 10px;
-            padding-left: 12px;
+            padding-left: 10px;
         }
 
         .nav-menu {
@@ -85,7 +81,7 @@
             align-items: center;
             gap: 12px;
             padding: 12px 16px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             color: var(--text-muted);
             text-decoration: none;
             cursor: pointer;
@@ -99,32 +95,26 @@
         }
 
         .nav-item:hover {
-            background-color: var(--hover-bg);
-            color: var(--text-titles);
+            background-color: var(--col-blush); /* Hover bo'lganda och pushti */
+            color: var(--primary);
         }
 
         .nav-item.active {
             background-color: var(--primary);
             color: white;
-            /* Soyani ham asosiy rangga moslash */
-            box-shadow: 0 4px 6px -1px rgba(112, 44, 43, 0.3);
+            box-shadow: 0 4px 10px rgba(112, 44, 43, 0.3); /* To'q qizil soya */
         }
 
-        .nav-item i {
-            width: 20px;
-            height: 20px;
-        }
+        .nav-item i { width: 20px; height: 20px; }
 
         .logout-btn {
             margin-top: auto;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
+            color: var(--primary);
             justify-content: center;
         }
-        
         .logout-btn:hover {
-            border-color: var(--danger);
-            color: var(--danger);
-            background: #fff5f5;
+            background: var(--col-blush);
         }
 
         /* ============== 3. ASOSIY QISM (Main) ============== */
@@ -137,16 +127,19 @@
         }
 
         .top-header {
-            background-color: var(--bg-white);
+            background-color: #ffffff;
             height: 64px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             padding: 0 32px;
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--text-titles);
             justify-content: space-between;
+        }
+
+        .page-header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
         }
 
         .content-area {
@@ -156,23 +149,10 @@
         }
 
         /* ============== 4. UI ELEMENTLARI ============== */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .page-title {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--text-titles);
-        }
-
         /* Tugmalar */
         .btn {
             padding: 10px 20px;
-            border-radius: 6px;
+            border-radius: var(--radius);
             border: none;
             font-weight: 600;
             cursor: pointer;
@@ -186,118 +166,95 @@
         .btn-primary {
             background-color: var(--primary);
             color: white;
-            box-shadow: 0 2px 4px rgba(112, 44, 43, 0.2);
+            box-shadow: 0 2px 5px rgba(112, 44, 43, 0.2);
         }
         .btn-primary:hover { background-color: var(--primary-hover); }
-        
-        .btn-orange { background-color: #f59e0b; color: white; }
-        .btn-orange:hover { background-color: #d97706; }
 
         .btn-outline {
             background: white;
-            border: 1px solid var(--border-color);
-            color: var(--text-body);
+            border: 1px solid var(--border);
+            color: var(--text-main);
         }
-        .btn-outline:hover { background: var(--hover-bg); border-color: var(--primary-hover); }
+        .btn-outline:hover { background: var(--col-blush); border-color: var(--primary); }
 
-        /* Filtrlash qatori */
+        /* Filterlar */
         .filter-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            display: flex;
             gap: 15px;
-            margin-bottom: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
         }
         
-        input, select {
+        .form-control {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             outline: none;
-            color: var(--text-body);
-            background: #fff;
             font-size: 14px;
+            background: #fff;
+            color: var(--text-main);
         }
-        input:focus, select:focus {
+        .form-control:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(112, 44, 43, 0.1);
+            box-shadow: 0 0 0 3px rgba(112, 44, 43, 0.1);
         }
 
-        /* JADVAL DIZAYNI */
+        /* Jadvallar (Card Style) */
         .card {
-            background-color: var(--bg-white);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
             overflow: hidden;
             margin-bottom: 30px;
         }
 
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-        }
+        .table-responsive { width: 100%; overflow-x: auto; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
 
         th {
             text-align: left;
             padding: 16px 24px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--primary); /* Sarlavha rangi primary */
+            font-weight: 700;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            /* Jadval sarlavhasi foni - och pushti */
-            background: var(--hover-bg);
+            background: var(--col-blush); /* Palitradagi och fon */
         }
 
         td {
             padding: 16px 24px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-body);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
             font-size: 14px;
             vertical-align: middle;
         }
 
         tr:last-child td { border-bottom: none; }
-        /* Qator ustiga borgandagi rang */
-        tr:hover td { background-color: #fff5f5; }
+        tr:hover td { background-color: #fffcfc; } /* Juda och qizg'ish hover */
         
-        /* Qarzdorlar qatori - asosiy rangning juda och varianti */
-        tr.warn-row td { background-color: rgba(112, 44, 43, 0.08); } 
+        /* Qarzdorlar uchun qizilroq fon */
+        tr.warn-row td { background-color: rgba(239, 68, 68, 0.05); }
 
-        .actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
+        /* Amallar tugmalari */
         .icon-btn {
             background: none;
             border: 1px solid transparent;
             cursor: pointer;
             padding: 6px;
             border-radius: 6px;
-            color: var(--text-muted);
             transition: .2s;
+            color: var(--col-rose);
         }
-        .icon-btn:hover { background: var(--hover-bg); color: var(--text-titles); border-color: var(--border-color); }
-        .icon-btn.edit { color: var(--primary-hover); }
-        .icon-btn.edit:hover { background: var(--hover-bg); }
+        .icon-btn:hover { background: var(--col-blush); color: var(--primary); }
         .icon-btn.delete { color: var(--danger); }
-        .icon-btn.delete:hover { background: #fff5f5; }
+        .icon-btn.delete:hover { background: #fee2e2; }
 
-        /* STATISTIKA KARTALARI */
+        /* Statistika Kartalari */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -306,58 +263,63 @@
         }
         .stat-card {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
         }
-        .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; font-weight: 500; }
-        .stat-value { font-size: 24px; font-weight: 700; color: var(--text-titles); }
-        
-        /* DIALOG (MODAL) */
+        .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 26px; font-weight: 800; color: var(--primary); }
+
+        /* Modallar (Dialog) */
         dialog {
             border: none;
             border-radius: 12px;
-            padding: 0;
             width: 100%;
-            max-width: 600px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 550px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 0;
         }
-        dialog::backdrop { background: rgba(112, 44, 43, 0.2); backdrop-filter: blur(2px); }
+        dialog::backdrop { background: rgba(112, 44, 43, 0.3); backdrop-filter: blur(3px); }
         
         .modal-header {
             padding: 20px 24px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: var(--text-titles);
+            background: #fff;
         }
-        .modal-title { font-weight: 700; font-size: 18px; }
-        .modal-body { padding: 24px; display: grid; gap: 16px; }
+        .modal-title { font-weight: 700; font-size: 18px; color: var(--primary); }
+        .modal-body { padding: 24px; display: grid; gap: 16px; background: #fff; }
         .modal-footer {
             padding: 16px 24px;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--border);
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            background: var(--hover-bg);
+            background: #fdfdfd;
         }
-        .close-modal-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); }
-        .close-modal-btn:hover { color: var(--text-titles); }
-
+        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full-width { grid-column: span 2; }
 
-        /* TAB SYSTEM (Mijozlar, Ombor...) */
-        .view-section { display: none; }
+        /* Rasmlar (Omborxona) */
+        .product-img {
+            width: 40px; height: 40px; border-radius: 6px; 
+            object-fit: cover; border: 1px solid var(--border);
+        }
+
+        /* Views */
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
-        
-        /* Mobil uchun */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -260px; height: 100%; z-index: 100; }
+            .sidebar { position: fixed; left: -260px; height: 100%; z-index: 100; transition: 0.3s; box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
             .sidebar.show { left: 0; }
-            .main-content { margin-left: 0; }
             .top-header { padding: 0 16px; }
             .content-area { padding: 16px; }
             .form-grid { grid-template-columns: 1fr; }
@@ -385,7 +347,7 @@
                 <i data-feather="pie-chart"></i> Statistika
             </button>
             
-            <button onclick="exportExcel()" class="nav-item logout-btn" style="justify-content: flex-start; margin-top: auto; border:none;">
+            <button onclick="exportExcel()" class="nav-item logout-btn">
                 <i data-feather="download"></i> Excelga Yuklash
             </button>
         </nav>
@@ -393,47 +355,48 @@
 
     <main class="main-content">
         <header class="top-header">
-            <div style="display:flex; align-items:center; gap:10px">
-                <button class="icon-btn" onclick="toggleSidebar()" style="display:none; @media(max-width:768px){display:block}"><i data-feather="menu"></i></button>
-                <span id="page-header-title">Mijozlar</span>
+            <div style="display:flex; align-items:center; gap:15px">
+                <button class="btn-outline" onclick="toggleSidebar()" style="padding:8px; border-radius:50%; display:none; @media(max-width:768px){display:block}">
+                    <i data-feather="menu"></i>
+                </button>
+                <span class="page-header-title" id="page-title">Mijozlar</span>
             </div>
-            <div style="font-size:14px; color:var(--text-muted)">
-                Bugun: <span id="current-date"></span>
+            <div style="font-size:14px; color:var(--primary); font-weight:500;">
+                <i data-feather="calendar" style="width:14px; vertical-align:middle"></i> 
+                <span id="current-date"></span>
             </div>
         </header>
 
         <div class="content-area">
 
             <div id="view-mijozlar" class="view-section active">
-                <div class="page-header">
-                    <h1 class="page-title">Mijozlar Ro'yxati</h1>
-                    <button class="btn btn-primary" onclick="openClientModal()">
-                        <i data-feather="plus"></i> Yangi mijoz
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px;">
+                    <div class="filter-bar" style="margin-bottom:0; flex-grow:1; max-width:500px;">
+                        <input id="search-client" class="form-control" placeholder="Qidirish: Ism yoki Telefon..." oninput="renderClients()">
+                        <select id="filter-state" class="form-control" onchange="renderClients()" style="width:150px;">
+                            <option value="all">Barchasi</option>
+                            <option value="debt">Qarzdorlar</option>
+                            <option value="clean">Toza</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal('dlgClient')">
+                        <i data-feather="plus"></i> Yangi Mijoz
                     </button>
                 </div>
 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-label">Jami Qarz</div>
-                        <div class="stat-value" id="st-qarz" style="color:var(--danger)">0</div>
+                        <div class="stat-label">Umumiy Qarz</div>
+                        <div class="stat-value" id="st-debt" style="color:var(--danger)">0</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">To'langan</div>
-                        <div class="stat-value" id="st-tolov" style="color:var(--primary)">0</div>
+                        <div class="stat-value" id="st-paid" style="color:var(--primary)">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Jami Qoldiq</div>
-                        <div class="stat-value" id="st-qoldiq">0</div>
+                        <div class="stat-label">Umumiy Savdo</div>
+                        <div class="stat-value" id="st-trade" style="color:var(--text-main)">0</div>
                     </div>
-                </div>
-
-                <div class="filter-bar">
-                    <input id="search-input" placeholder="Qidirish: Ism yoki Telefon..." oninput="renderClients()">
-                    <select id="filter-state" onchange="renderClients()">
-                        <option value="all">Barchasi</option>
-                        <option value="debt">Qarzdorlar</option>
-                        <option value="clean">Qarzi yo'qlar</option>
-                    </select>
                 </div>
 
                 <div class="card">
@@ -442,66 +405,59 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Ism familiya</th>
+                                    <th>Ism Familiya</th>
                                     <th>Telefon</th>
-                                    <th>Berilgan tovar</th>
-                                    <th>Jami Summa</th>
+                                    <th>Jami Savdo</th>
                                     <th>To'langan</th>
-                                    <th>Qoldiq</th>
+                                    <th>Qarz</th>
                                     <th style="text-align: right">Amallar</th>
                                 </tr>
                             </thead>
-                            <tbody id="tbody-mijozlar"></tbody>
+                            <tbody id="tbody-clients"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
             <div id="view-omborxona" class="view-section">
-                <div class="page-header">
-                    <h1 class="page-title">Omborxona</h1>
-                    <button class="btn btn-primary" onclick="openProductModal()">
-                        <i data-feather="plus"></i> Mahsulot qo'shish
+                <div style="display:flex; justify-content:space-between; margin-bottom:24px">
+                    <h2 style="color:var(--primary)">Omborxona</h2>
+                    <button class="btn btn-primary" onclick="openModal('dlgProduct')">
+                        <i data-feather="plus"></i> Mahsulot Qo'shish
                     </button>
                 </div>
                 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Ombor Qiymati (Taxminiy)</div>
-                        <div class="stat-value" id="st-ombor-total">0</div>
-                    </div>
-                </div>
-
                 <div class="card">
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Rasm</th>
                                     <th>Nomi</th>
                                     <th>Birlik</th>
                                     <th>Qoldiq</th>
-                                    <th>Kelish narxi</th>
+                                    <th>Sotish Narxi</th>
                                     <th style="text-align: right">Amallar</th>
                                 </tr>
                             </thead>
-                            <tbody id="tbody-ombor"></tbody>
+                            <tbody id="tbody-warehouse"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
             <div id="view-harajatlar" class="view-section">
-                <div class="page-header">
-                    <h1 class="page-title">Harajatlar</h1>
-                    <button class="btn btn-primary" onclick="openExpenseModal()">
-                        <i data-feather="plus"></i> Harajat qo'shish
+                <div style="display:flex; justify-content:space-between; margin-bottom:24px">
+                    <h2 style="color:var(--primary)">Harajatlar</h2>
+                    <button class="btn btn-primary" onclick="openModal('dlgExpense')">
+                        <i data-feather="minus-circle"></i> Harajat Qo'shish
                     </button>
                 </div>
 
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">Jami Harajat</div>
-                        <div class="stat-value" id="st-harajat-total">0</div>
+                        <div class="stat-value" id="st-exp-total">0</div>
                     </div>
                 </div>
 
@@ -516,16 +472,14 @@
                                     <th style="text-align: right">Amallar</th>
                                 </tr>
                             </thead>
-                            <tbody id="tbody-harajat"></tbody>
+                            <tbody id="tbody-expenses"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
             <div id="view-statistika" class="view-section">
-                <div class="page-header">
-                    <h1 class="page-title">Statistika</h1>
-                </div>
+                <h2 style="color:var(--primary); margin-bottom:24px;">Umumiy Hisobot</h2>
                 <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
                     <div class="stat-card">
                         <canvas id="chartPie"></canvas>
@@ -541,136 +495,70 @@
 
     <dialog id="dlgClient">
         <div class="modal-header">
-            <span class="modal-title" id="dlgClientTitle">Mijoz</span>
-            <button class="close-modal-btn" onclick="dlgClient.close()"><i data-feather="x"></i></button>
+            <span class="modal-title">Yangi Mijoz</span>
+            <button onclick="closeModal('dlgClient')" style="border:none; background:none; cursor:pointer"><i data-feather="x"></i></button>
         </div>
-        <form id="formClient">
+        <form onsubmit="saveClient(event)">
             <div class="modal-body">
                 <div class="form-grid">
                     <div class="full-width">
-                        <label class="stat-label">Ism Familiya</label>
-                        <input id="c_name" required placeholder="To'liq ism">
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Ism Familiya</label>
+                        <input id="c_name" class="form-control" required placeholder="F.I.O">
                     </div>
                     <div>
-                        <label class="stat-label">Telefon</label>
-                        <input id="c_phone" placeholder="+998...">
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Telefon</label>
+                        <input id="c_phone" class="form-control" placeholder="+998...">
                     </div>
                     <div>
-                        <label class="stat-label">Boshlang'ich qarz (agar bo'lsa)</label>
-                        <input id="c_init_debt" type="number" value="0">
-                    </div>
-                    <div>
-                        <label class="stat-label">Narx (1 dona uchun)</label>
-                        <input id="c_price_dona" type="number" placeholder="So'm">
-                    </div>
-                    <div>
-                        <label class="stat-label">Narx (1 sm uchun)</label>
-                        <input id="c_price_sm" type="number" placeholder="So'm">
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Eski Qarz</label>
+                        <input id="c_init" type="number" class="form-control" value="0">
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="dlgClient.close()">Bekor qilish</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('dlgClient')">Bekor qilish</button>
                 <button type="submit" class="btn btn-primary">Saqlash</button>
             </div>
         </form>
     </dialog>
 
-    <dialog id="dlgHistory">
-        <div class="modal-header">
-            <span class="modal-title"><span id="histClientName"></span> - Tarix</span>
-            <button class="close-modal-btn" onclick="dlgHistory.close()"><i data-feather="x"></i></button>
-        </div>
-        <div class="modal-body" style="background: var(--hover-bg);">
-            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-                <h4 style="margin-bottom: 10px; color: var(--text-titles)">Yangi savdo / Tovar berish</h4>
-                <form id="formTrade" class="form-grid">
-                    <div class="full-width">
-                        <select id="t_prod_select" style="border-color: var(--primary); font-weight: bold;">
-                            <option value="">-- Omborxonadan tanlash (Ixtiyoriy) --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <input id="t_date" type="date" required>
-                    </div>
-                    <div>
-                        <input id="t_qty_dona" type="number" step="any" placeholder="Dona">
-                    </div>
-                    <div>
-                        <input id="t_len_sm" type="number" step="any" placeholder="Sm">
-                    </div>
-                    <div>
-                        <input id="t_price_dona" type="number" placeholder="Narx/dona (Avto)">
-                    </div>
-                    <div>
-                        <input id="t_price_sm" type="number" placeholder="Narx/sm (Avto)">
-                    </div>
-                    <div class="full-width">
-                        <input id="t_note" placeholder="Izoh...">
-                    </div>
-                    <div class="full-width" style="text-align: right;">
-                        <button class="btn btn-primary">Qo'shish</button>
-                    </div>
-                </form>
-            </div>
-
-            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-                <h4 style="margin-bottom: 10px; color: var(--text-titles)">To'lov qabul qilish</h4>
-                <form id="formPayment" style="display: flex; gap: 10px;">
-                    <input id="p_date" type="date" required>
-                    <input id="p_amount" type="number" placeholder="Summa" required style="flex-grow:1">
-                    <button class="btn btn-primary">Saqlash</button>
-                </form>
-            </div>
-
-            <div class="card" style="margin-bottom: 0;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Sana</th>
-                            <th>Tovar / Izoh</th>
-                            <th>Miqdor</th>
-                            <th>Jami</th>
-                            <th>To'lov</th>
-                            <th>Amal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-history"></tbody>
-                </table>
-            </div>
-        </div>
-    </dialog>
-
     <dialog id="dlgProduct">
         <div class="modal-header">
-            <span class="modal-title">Mahsulot</span>
-            <button class="close-modal-btn" onclick="dlgProduct.close()"><i data-feather="x"></i></button>
+            <span class="modal-title">Yangi Mahsulot</span>
+            <button onclick="closeModal('dlgProduct')" style="border:none; background:none; cursor:pointer"><i data-feather="x"></i></button>
         </div>
-        <form id="formProduct">
+        <form onsubmit="saveProduct(event)">
             <div class="modal-body">
                 <div class="form-grid">
                     <div class="full-width">
-                        <label class="stat-label">Nomi</label>
-                        <input id="w_name" required>
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Mahsulot Rasmi</label>
+                        <input type="file" id="w_img_file" class="form-control" accept="image/*">
+                    </div>
+                    <div class="full-width">
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Nomi</label>
+                        <input id="w_name" class="form-control" required>
                     </div>
                     <div>
-                        <label class="stat-label">Birlik</label>
-                        <select id="w_unit">
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Birlik</label>
+                        <select id="w_unit" class="form-control">
                             <option value="dona">Dona</option>
-                            <option value="sm">Sm</option>
+                            <option value="kg">Kg</option>
+                            <option value="metr">Metr</option>
+                            <option value="litr">Litr</option>
                         </select>
                     </div>
                     <div>
-                        <label class="stat-label">Qoldiq</label>
-                        <input id="w_qty" type="number" required>
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Qoldiq</label>
+                        <input id="w_qty" type="number" class="form-control" required>
                     </div>
                     <div class="full-width">
-                        <label class="stat-label">Kelish narxi (so'm)</label>
-                        <input id="w_price" type="number">
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Sotish Narxi</label>
+                        <input id="w_price" type="number" class="form-control">
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('dlgProduct')">Bekor qilish</button>
                 <button type="submit" class="btn btn-primary">Saqlash</button>
             </div>
         </form>
@@ -679,493 +567,367 @@
     <dialog id="dlgExpense">
         <div class="modal-header">
             <span class="modal-title">Harajat</span>
-            <button class="close-modal-btn" onclick="dlgExpense.close()"><i data-feather="x"></i></button>
+            <button onclick="closeModal('dlgExpense')" style="border:none; background:none; cursor:pointer"><i data-feather="x"></i></button>
         </div>
-        <form id="formExpense">
+        <form onsubmit="saveExpense(event)">
             <div class="modal-body">
                 <div class="form-grid">
                     <div>
-                        <label class="stat-label">Sana</label>
-                        <input id="e_date" type="date" required>
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Sana</label>
+                        <input id="e_date" type="date" class="form-control" required>
                     </div>
                     <div>
-                        <label class="stat-label">Summa</label>
-                        <input id="e_amount" type="number" required>
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Summa</label>
+                        <input id="e_amount" type="number" class="form-control" required>
                     </div>
                     <div class="full-width">
-                        <label class="stat-label">Sabab</label>
-                        <input id="e_reason" required>
+                        <label style="font-size:12px; font-weight:600; color:var(--primary)">Sabab</label>
+                        <input id="e_reason" class="form-control" required>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('dlgExpense')">Bekor qilish</button>
                 <button type="submit" class="btn btn-primary">Saqlash</button>
             </div>
         </form>
     </dialog>
 
+    <dialog id="dlgHistory" style="max-width: 800px;">
+        <div class="modal-header">
+            <span class="modal-title"><span id="histClientName"></span> — Tarix</span>
+            <button onclick="closeModal('dlgHistory')" style="border:none; background:none; cursor:pointer"><i data-feather="x"></i></button>
+        </div>
+        <div class="modal-body" style="background: var(--col-blush);">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div style="background:white; padding:20px; border-radius:12px; border:1px solid var(--border)">
+                    <h4 style="margin-bottom:15px; color:var(--primary); display:flex; align-items:center; gap:8px"><i data-feather="shopping-cart" style="width:16px"></i> Tovar berish</h4>
+                    <form onsubmit="addTrade(event)" style="display:grid; gap:10px">
+                        <select id="t_prod" class="form-control" onchange="autoFillPrice()">
+                            <option value="">-- Ombordan tanlash --</option>
+                        </select>
+                        <div style="display:flex; gap:10px">
+                            <input id="t_qty" type="number" class="form-control" placeholder="Miqdor" required>
+                            <input id="t_price" type="number" class="form-control" placeholder="Narx">
+                        </div>
+                        <input id="t_note" class="form-control" placeholder="Izoh (agar kerak bo'lsa)">
+                        <button class="btn btn-primary" style="width:100%">Qo'shish</button>
+                    </form>
+                </div>
+
+                <div style="background:white; padding:20px; border-radius:12px; border:1px solid var(--border)">
+                    <h4 style="margin-bottom:15px; color:var(--primary); display:flex; align-items:center; gap:8px"><i data-feather="credit-card" style="width:16px"></i> To'lov qabul qilish</h4>
+                    <form onsubmit="addPayment(event)" style="display:grid; gap:10px">
+                        <select id="p_method" class="form-control">
+                            <option value="cash">Naqd</option>
+                            <option value="card">Plastik Karta</option>
+                            <option value="click">Click / Payme</option>
+                        </select>
+                        <input id="p_amount" type="number" class="form-control" placeholder="Summa" required>
+                        <button class="btn btn-primary" style="width:100%">To'lovni Saqlash</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 0; margin-top:20px; border:none; box-shadow:none;">
+                <div class="table-responsive" style="max-height: 300px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sana</th>
+                                <th>Ma'lumot</th>
+                                <th>Kirim / Chiqim</th>
+                                <th style="text-align:right">Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-history"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
     <script>
-        // === UTILS ===
+        // --- SETUP ---
         const $ = id => document.getElementById(id);
-        const fmt = n => Number(n||0).toLocaleString('uz-UZ');
+        const fmt = n => Number(n).toLocaleString('uz-UZ');
         const parse = n => parseFloat(n) || 0;
-        const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
-        
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('uz-UZ');
+        const genId = () => Math.random().toString(36).substr(2,9);
+        $('current-date').innerText = new Date().toLocaleDateString('uz-UZ', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
 
-        // === DATA STORE (LocalStorage) ===
+        // --- DATABASE ---
         const DB = {
-            clients: JSON.parse(localStorage.getItem('blink_clients') || '[]'),
-            warehouse: JSON.parse(localStorage.getItem('blink_warehouse') || '[]'),
-            expenses: JSON.parse(localStorage.getItem('blink_expenses') || '[]'),
-
+            clients: JSON.parse(localStorage.getItem('bp_clients') || '[]'),
+            warehouse: JSON.parse(localStorage.getItem('bp_warehouse') || '[]'),
+            expenses: JSON.parse(localStorage.getItem('bp_expenses') || '[]'),
             save: () => {
-                localStorage.setItem('blink_clients', JSON.stringify(DB.clients));
-                localStorage.setItem('blink_warehouse', JSON.stringify(DB.warehouse));
-                localStorage.setItem('blink_expenses', JSON.stringify(DB.expenses));
+                localStorage.setItem('bp_clients', JSON.stringify(DB.clients));
+                localStorage.setItem('bp_warehouse', JSON.stringify(DB.warehouse));
+                localStorage.setItem('bp_expenses', JSON.stringify(DB.expenses));
                 refreshAll();
             }
         };
+        let currClientIdx = null;
 
-        let currIdx = null; // Hozirgi tanlangan mijoz indexi
-
-        // === NAVIGATSIYA ===
+        // --- NAVIGATION ---
         function switchTab(tab) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            
             $(`view-${tab}`).classList.add('active');
             $(`nav-${tab}`).classList.add('active');
-            
-            // Mobil sidebar yopish
-            $('sidebar').classList.remove('show');
-
+            $('page-title').innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
             if(tab === 'statistika') renderCharts();
         }
         function toggleSidebar() { $('sidebar').classList.toggle('show'); }
 
-        // === 1. MIJOZLAR LOGIKASI ===
-        function getClientTotals(c) {
-            let debt = parse(c.init_debt || 0); // Boshlang'ich qarz
-            let prodTotal = 0;
-            
-            // Tarix bo'yicha hisoblash
-            (c.history || []).forEach(h => {
-                if(h.type === 'trade') {
-                    const cost = (parse(h.qty_dona) * parse(h.price_dona)) + (parse(h.len_sm) * parse(h.price_sm));
-                    debt += cost;
-                    prodTotal += cost;
-                } else if(h.type === 'pay') {
-                    debt -= parse(h.amount);
-                }
-            });
-
-            // Qaytgan umumiy summa = Jami qarz (historysiz) - Hozirgi qarz ??
-            // Oddiyroq: Jami savdo - Hozirgi qoldiq = To'langan (agar init debt 0 bo'lsa)
-            // Keling, aniqroq hisoblaymiz:
-            let totalPaid = (c.history || []).filter(h => h.type === 'pay').reduce((s, h) => s + parse(h.amount), 0);
-            
-            return { debt, paid: totalPaid, totalTrade: prodTotal + parse(c.init_debt || 0) };
-        }
-
+        // --- MIJOZLAR ---
         function renderClients() {
-            const tbody = $('tbody-mijozlar');
-            tbody.innerHTML = '';
-            
-            const search = $('search-input').value.toLowerCase();
+            const tbody = $('tbody-clients'); tbody.innerHTML = '';
+            const search = $('search-client').value.toLowerCase();
             const filter = $('filter-state').value;
-
-            let grandDebt = 0, grandPaid = 0;
+            let totDebt = 0, totPaid = 0, totTrade = 0;
 
             DB.clients.forEach((c, i) => {
-                const t = getClientTotals(c);
-                const matchSearch = c.name.toLowerCase().includes(search) || (c.phone||'').includes(search);
-                const matchFilter = filter === 'all' || (filter === 'debt' && t.debt > 0) || (filter === 'clean' && t.debt <= 0);
+                let debt = parse(c.init || 0);
+                let paid = 0;
+                let trade = 0;
 
-                if(matchSearch && matchFilter) {
-                    grandDebt += t.debt;
-                    grandPaid += t.paid;
+                (c.history || []).forEach(h => {
+                    if(h.type === 'trade') { 
+                        let cost = parse(h.qty) * parse(h.price); 
+                        debt += cost; trade += cost;
+                    } else { 
+                        debt -= parse(h.amount); paid += parse(h.amount);
+                    }
+                });
 
+                if(c.name.toLowerCase().includes(search)) {
+                    if(filter === 'debt' && debt <= 0) return;
+                    if(filter === 'clean' && debt > 0) return;
+
+                    totDebt += debt; totPaid += paid; totTrade += trade;
+                    
                     const tr = document.createElement('tr');
-                    if(t.debt > 0) tr.classList.add('warn-row');
+                    if(debt > 0) tr.classList.add('warn-row');
                     
                     tr.innerHTML = `
                         <td>${i + 1}</td>
-                        <td><div style="font-weight:600">${c.name}</div></td>
+                        <td><div style="font-weight:700; color:var(--primary)">${c.name}</div></td>
                         <td>${c.phone || '-'}</td>
-                        <td>${fmt(t.totalTrade)}</td>
-                        <td style="font-weight:bold">${fmt(t.totalTrade)}</td>
-                        <td style="color:var(--primary)">${fmt(t.paid)}</td>
-                        <td style="color:var(--danger); font-weight:bold">${fmt(t.debt)}</td>
-                        <td>
-                            <div class="actions">
-                                <button class="icon-btn edit" onclick="openHistory(${i})" title="Tarix va Savdo"><i data-feather="shopping-cart"></i></button>
-                                <button class="icon-btn edit" onclick="editClient(${i})" title="Tahrirlash"><i data-feather="edit-2"></i></button>
-                                <button class="icon-btn delete" onclick="delClient(${i})" title="O'chirish"><i data-feather="trash-2"></i></button>
-                            </div>
+                        <td>${fmt(trade)}</td>
+                        <td style="color:var(--primary)">${fmt(paid)}</td>
+                        <td style="color:var(--danger); font-weight:800">${fmt(debt)}</td>
+                        <td style="text-align:right">
+                            <button class="icon-btn edit" onclick="openHistory(${i})" title="Tarix"><i data-feather="shopping-cart" style="width:16px"></i></button>
+                            <button class="icon-btn delete" onclick="delClient(${i})" title="O'chirish"><i data-feather="trash-2" style="width:16px"></i></button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 }
             });
-
-            $('st-qarz').innerText = fmt(grandDebt);
-            $('st-tolov').innerText = fmt(grandPaid);
-            $('st-qoldiq').innerText = fmt(grandDebt); // Qoldiq qarz bilan bir xil mantiqda
+            $('st-debt').innerText = fmt(totDebt);
+            $('st-paid').innerText = fmt(totPaid);
+            $('st-trade').innerText = fmt(totTrade);
             feather.replace();
         }
 
-        // Mijoz Modal
-        function openClientModal() {
-            currIdx = null;
-            $('formClient').reset();
-            $('dlgClientTitle').innerText = "Yangi Mijoz";
-            $('dlgClient').showModal();
-        }
-        function editClient(i) {
-            currIdx = i;
-            const c = DB.clients[i];
-            $('c_name').value = c.name;
-            $('c_phone').value = c.phone;
-            $('c_init_debt').value = c.init_debt || 0;
-            $('c_price_dona').value = c.def_price_dona || '';
-            $('c_price_sm').value = c.def_price_sm || '';
-            $('dlgClientTitle').innerText = "Tahrirlash";
-            $('dlgClient').showModal();
-        }
-        $('formClient').onsubmit = e => {
-            e.preventDefault();
-            const client = {
-                name: $('c_name').value,
-                phone: $('c_phone').value,
-                init_debt: parse($('c_init_debt').value),
-                def_price_dona: parse($('c_price_dona').value),
-                def_price_sm: parse($('c_price_sm').value),
-                history: currIdx !== null ? DB.clients[currIdx].history : []
-            };
-            if(currIdx !== null) DB.clients[currIdx] = client;
-            else DB.clients.push(client);
-            
-            DB.save();
-            $('dlgClient').close();
-        };
-        function delClient(i) {
-            if(confirm("Mijoz o'chirilsinmi?")) {
-                DB.clients.splice(i, 1);
-                DB.save();
-            }
-        }
-
-        // === 2. TARIX VA SAVDO LOGIKASI ===
-        function openHistory(i) {
-            currIdx = i;
-            const c = DB.clients[i];
-            $('histClientName').innerText = c.name;
-            
-            // Savdo formasi uchun defaultlar
-            $('formTrade').reset();
-            $('t_date').valueAsDate = new Date();
-            $('t_price_dona').value = c.def_price_dona || '';
-            $('t_price_sm').value = c.def_price_sm || '';
-            
-            // To'lov formasi
-            $('formPayment').reset();
-            $('p_date').valueAsDate = new Date();
-
-            // Omborni yuklash selectga
-            const sel = $('t_prod_select');
-            sel.innerHTML = '<option value="">-- Omborxonadan tanlash (Ixtiyoriy) --</option>';
-            DB.warehouse.forEach(w => {
-                const opt = document.createElement('option');
-                opt.value = w.id;
-                opt.text = `${w.name} | Qoldiq: ${w.qty} ${w.unit}`;
-                sel.add(opt);
-            });
-            // Select o'zgarganda narxlarni va bloklarni to'g'irlash
-            sel.onchange = function() {
-                const w = DB.warehouse.find(x => x.id == this.value);
-                if(w) {
-                    if(w.unit === 'dona') { $('t_qty_dona').disabled = false; $('t_len_sm').disabled = true; $('t_len_sm').value = ''; }
-                    else { $('t_len_sm').disabled = false; $('t_qty_dona').disabled = true; $('t_qty_dona').value = ''; }
-                    // Narxni ham qo'yib yuboramiz agar bor bo'lsa
-                    if(w.price) {
-                        if(w.unit === 'dona') $('t_price_dona').value = w.price;
-                        else $('t_price_sm').value = w.price;
-                    }
-                } else {
-                    $('t_qty_dona').disabled = false; $('t_len_sm').disabled = false;
-                }
-            };
-
-            renderHistoryTable();
-            $('dlgHistory').showModal();
-        }
-
-        function renderHistoryTable() {
-            const tbody = $('tbody-history');
-            tbody.innerHTML = '';
-            const c = DB.clients[currIdx];
-            
-            // Tarixni teskari tartibda (yangi tepada)
-            const list = (c.history || []).map((h, idx) => ({...h, idx})).reverse();
-
-            list.forEach(h => {
-                const tr = document.createElement('tr');
-                let desc = h.note || '-';
-                // Agar ombordan bo'lsa
-                if(h.prodId) {
-                    const w = DB.warehouse.find(x => x.id === h.prodId);
-                    if(w) desc = `<span style="color:var(--primary); font-weight:bold">${w.name}</span> ` + desc;
-                }
-
-                if(h.type === 'trade') {
-                    const total = (parse(h.qty_dona)*parse(h.price_dona)) + (parse(h.len_sm)*parse(h.price_sm));
-                    const qtyStr = (h.qty_dona ? h.qty_dona+' dona ' : '') + (h.len_sm ? h.len_sm+' sm' : '');
-                    
-                    tr.innerHTML = `
-                        <td>${h.date}</td>
-                        <td>${desc}</td>
-                        <td>${qtyStr}</td>
-                        <td style="font-weight:bold">${fmt(total)}</td>
-                        <td>-</td>
-                        <td><button class="icon-btn delete" onclick="delHistoryItem(${h.idx})"><i data-feather="x"></i></button></td>
-                    `;
-                } else {
-                    tr.innerHTML = `
-                        <td>${h.date}</td>
-                        <td>To'lov: ${h.note || ''}</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td style="color:var(--primary); font-weight:bold">${fmt(h.amount)}</td>
-                        <td><button class="icon-btn delete" onclick="delHistoryItem(${h.idx})"><i data-feather="x"></i></button></td>
-                    `;
-                }
-                tbody.appendChild(tr);
-            });
-            feather.replace();
-        }
-
-        // Savdo qo'shish
-        $('formTrade').onsubmit = e => {
-            e.preventDefault();
-            const prodId = $('t_prod_select').value;
-            const qD = parse($('t_qty_dona').value);
-            const qS = parse($('t_len_sm').value);
-            
-            // Ombordan ayirish
-            if(prodId) {
-                const w = DB.warehouse.find(x => x.id === prodId);
-                const needed = w.unit === 'dona' ? qD : qS;
-                if(w.qty < needed) { alert("Omborda yetarli emas!"); return; }
-                w.qty -= needed;
-            }
-
-            const rec = {
-                type: 'trade',
-                date: $('t_date').value,
-                qty_dona: qD, len_sm: qS,
-                price_dona: parse($('t_price_dona').value),
-                price_sm: parse($('t_price_sm').value),
-                note: $('t_note').value,
-                prodId: prodId || null
-            };
-
-            if(!DB.clients[currIdx].history) DB.clients[currIdx].history = [];
-            DB.clients[currIdx].history.push(rec);
-            DB.save();
-            
-            // Reset form partly
-            $('t_qty_dona').value=''; $('t_len_sm').value=''; $('t_note').value='';
-            // Qayta chizish
-            openHistory(currIdx);
-        };
-
-        // To'lov qo'shish
-        $('formPayment').onsubmit = e => {
-            e.preventDefault();
-            const rec = {
-                type: 'pay',
-                date: $('p_date').value,
-                amount: parse($('p_amount').value),
-                note: 'Karta/Naqd'
-            };
-            if(!DB.clients[currIdx].history) DB.clients[currIdx].history = [];
-            DB.clients[currIdx].history.push(rec);
-            DB.save();
-            $('p_amount').value = '';
-            renderHistoryTable();
-        };
-
-        // Tarixni o'chirish (Omborga qaytarish bilan)
-        function delHistoryItem(realIdx) {
-            if(!confirm("O'chirilsinmi?")) return;
-            const c = DB.clients[currIdx];
-            const h = c.history[realIdx];
-
-            if(h.type === 'trade' && h.prodId) {
-                const w = DB.warehouse.find(x => x.id === h.prodId);
-                if(w) w.qty += (w.unit === 'dona' ? parse(h.qty_dona) : parse(h.len_sm));
-            }
-            c.history.splice(realIdx, 1);
-            DB.save();
-            renderHistoryTable();
-        }
-
-        // === 3. OMBORXONA LOGIKASI ===
+        // --- OMBORXONA ---
         function renderWarehouse() {
-            const tbody = $('tbody-ombor');
-            tbody.innerHTML = '';
-            let totalVal = 0;
-
+            const tbody = $('tbody-warehouse'); tbody.innerHTML = '';
             DB.warehouse.forEach((w, i) => {
-                const val = w.qty * (w.price || 0);
-                totalVal += val;
-                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td><img src="${w.img || 'https://via.placeholder.com/40?text=Foto'}" class="product-img"></td>
                     <td style="font-weight:600">${w.name}</td>
-                    <td><span style="background:var(--hover-bg); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:12px">${w.unit}</span></td>
-                    <td style="font-weight:bold">${fmt(w.qty)}</td>
-                    <td>${fmt(w.price)}</td>
-                    <td>
-                         <button class="icon-btn delete" onclick="delProduct(${i})"><i data-feather="trash-2"></i></button>
-                    </td>
+                    <td><span style="background:var(--col-blush); padding:4px 8px; border-radius:6px; font-size:12px; color:var(--primary)">${w.unit}</span></td>
+                    <td style="font-weight:700">${fmt(w.qty)}</td>
+                    <td>${fmt(w.price)} so'm</td>
+                    <td style="text-align:right"><button class="icon-btn delete" onclick="delProduct(${i})"><i data-feather="trash-2" style="width:16px"></i></button></td>
                 `;
                 tbody.appendChild(tr);
             });
-            $('st-ombor-total').innerText = fmt(totalVal);
-            feather.replace();
         }
 
-        function openProductModal() { $('formProduct').reset(); $('dlgProduct').showModal(); }
-        $('formProduct').onsubmit = e => {
-            e.preventDefault();
-            DB.warehouse.push({
-                id: genId(),
-                name: $('w_name').value,
-                unit: $('w_unit').value,
-                qty: parse($('w_qty').value),
-                price: parse($('w_price').value)
-            });
-            DB.save();
-            $('dlgProduct').close();
-        };
-        function delProduct(i) {
-            if(confirm("Mahsulot o'chirilsinmi?")) { DB.warehouse.splice(i,1); DB.save(); }
-        }
-
-        // === 4. HARAJATLAR ===
+        // --- HARAJATLAR ---
         function renderExpenses() {
-            const tbody = $('tbody-harajat');
-            tbody.innerHTML = '';
+            const tbody = $('tbody-expenses'); tbody.innerHTML = '';
             let total = 0;
-            
-            DB.expenses.slice().reverse().forEach((e, i) => { // Yangisi tepada
+            DB.expenses.slice().reverse().forEach((e, i) => {
                 total += parse(e.amount);
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${e.date}</td>
                     <td>${e.reason}</td>
-                    <td style="color:var(--danger); font-weight:bold">-${fmt(e.amount)}</td>
-                    <td><button class="icon-btn delete" onclick="delExpense(${DB.expenses.length - 1 - i})"><i data-feather="trash-2"></i></button></td>
+                    <td style="color:var(--danger); font-weight:700">-${fmt(e.amount)}</td>
+                    <td style="text-align:right"><button class="icon-btn delete" onclick="delExpense(${DB.expenses.length - 1 - i})"><i data-feather="trash-2" style="width:16px"></i></button></td>
                 `;
                 tbody.appendChild(tr);
             });
-            $('st-harajat-total').innerText = fmt(total);
+            $('st-exp-total').innerText = fmt(total);
+        }
+
+        // --- TARIX VA SAVDO ---
+        function openHistory(i) {
+            currClientIdx = i;
+            $('histClientName').innerText = DB.clients[i].name;
+            
+            const sel = $('t_prod');
+            sel.innerHTML = '<option value="">-- Omborxonadan tanlash --</option>';
+            DB.warehouse.forEach(w => {
+                sel.innerHTML += `<option value="${w.id}" data-price="${w.price}">${w.name} (${w.qty} ${w.unit})</option>`;
+            });
+            
+            renderHistoryTable();
+            $('dlgHistory').showModal();
+        }
+
+        function autoFillPrice() {
+            const sel = $('t_prod');
+            const opt = sel.options[sel.selectedIndex];
+            if(opt.dataset.price) $('t_price').value = opt.dataset.price;
+        }
+
+        function addTrade(e) {
+            e.preventDefault();
+            const prodId = $('t_prod').value;
+            const qty = parse($('t_qty').value);
+            let prodName = $('t_prod').options[$('t_prod').selectedIndex].text;
+            
+            if(prodId) {
+                const w = DB.warehouse.find(x => x.id === prodId);
+                if(w.qty < qty) { alert("Omborda yetarli emas!"); return; }
+                w.qty -= qty;
+                prodName = w.name;
+            } else {
+                prodName = $('t_note').value || 'Tovarlar';
+            }
+
+            const rec = {
+                type: 'trade', date: new Date().toLocaleDateString(),
+                prodId: prodId, name: prodName, qty: qty,
+                price: parse($('t_price').value), note: $('t_note').value
+            };
+            
+            DB.clients[currClientIdx].history.push(rec);
+            DB.save(); renderHistoryTable(); e.target.reset();
+        }
+
+        function addPayment(e) {
+            e.preventDefault();
+            const rec = {
+                type: 'pay', date: new Date().toLocaleDateString(),
+                method: $('p_method').value, amount: parse($('p_amount').value)
+            };
+            DB.clients[currClientIdx].history.push(rec);
+            DB.save(); renderHistoryTable(); $('p_amount').value = '';
+        }
+
+        function renderHistoryTable() {
+            const tbody = $('tbody-history'); tbody.innerHTML = '';
+            const hist = DB.clients[currClientIdx].history || [];
+            
+            hist.slice().reverse().forEach((h, idx) => {
+                const realIdx = hist.length - 1 - idx;
+                const tr = document.createElement('tr');
+                if(h.type === 'trade') {
+                    tr.innerHTML = `
+                        <td>${h.date}</td>
+                        <td><b>${h.name}</b> <br> <span style="font-size:12px; color:gray">${h.qty} x ${fmt(h.price)}</span></td>
+                        <td style="font-weight:700; color:var(--text-main)">${fmt(h.qty * h.price)}</td>
+                        <td style="text-align:right"><button class="icon-btn delete" onclick="delHist(${realIdx})"><i data-feather="x" style="width:14px"></i></button></td>
+                    `;
+                } else {
+                    let m = h.method === 'click' ? 'Click' : (h.method==='card'?'Karta':'Naqd');
+                    tr.innerHTML = `
+                        <td>${h.date}</td>
+                        <td>To'lov (${m})</td>
+                        <td style="color:var(--primary); font-weight:700">+${fmt(h.amount)}</td>
+                        <td style="text-align:right"><button class="icon-btn delete" onclick="delHist(${realIdx})"><i data-feather="x" style="width:14px"></i></button></td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
             feather.replace();
         }
 
-        function openExpenseModal() { $('formExpense').reset(); $('e_date').valueAsDate = new Date(); $('dlgExpense').showModal(); }
-        $('formExpense').onsubmit = e => {
-            e.preventDefault();
-            DB.expenses.push({
-                date: $('e_date').value,
-                reason: $('e_reason').value,
-                amount: parse($('e_amount').value)
-            });
-            DB.save();
-            $('dlgExpense').close();
-        };
-        function delExpense(realIdx) {
-            if(confirm("O'chirilsinmi?")) { DB.expenses.splice(realIdx, 1); DB.save(); }
+        function delHist(idx) {
+            if(!confirm("O'chirilsinmi?")) return;
+            const h = DB.clients[currClientIdx].history[idx];
+            if(h.type === 'trade' && h.prodId) {
+                const w = DB.warehouse.find(x => x.id === h.prodId);
+                if(w) w.qty += parse(h.qty);
+            }
+            DB.clients[currClientIdx].history.splice(idx, 1);
+            DB.save(); renderHistoryTable();
         }
 
-        // === 5. DIAGRAMMALAR (Chart.js) ===
+        // --- CRUD ACTIONS ---
+        function saveClient(e) {
+            e.preventDefault();
+            DB.clients.push({ name: $('c_name').value, phone: $('c_phone').value, init: $('c_init').value, history: [] });
+            DB.save(); closeModal('dlgClient'); e.target.reset();
+        }
+        function delClient(i) { if(confirm("Aniqmi?")) { DB.clients.splice(i,1); DB.save(); } }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            const file = $('w_img_file').files[0];
+            const reader = new FileReader();
+            const done = (img) => {
+                DB.warehouse.push({ id: genId(), img: img, name: $('w_name').value, unit: $('w_unit').value, qty: parse($('w_qty').value), price: parse($('w_price').value) });
+                DB.save(); closeModal('dlgProduct'); e.target.reset();
+            };
+            if(file) { reader.readAsDataURL(file); reader.onload = () => done(reader.result); } else done(null);
+        }
+        function delProduct(i) { if(confirm("Aniqmi?")) { DB.warehouse.splice(i,1); DB.save(); } }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            DB.expenses.push({ date: $('e_date').value, reason: $('e_reason').value, amount: parse($('e_amount').value) });
+            DB.save(); closeModal('dlgExpense'); e.target.reset();
+        }
+        function delExpense(i) { if(confirm("Aniqmi?")) { DB.expenses.splice(i,1); DB.save(); } }
+
+        // --- MODAL UTILS ---
+        function openModal(id) { $(id).showModal(); }
+        function closeModal(id) { $(id).close(); }
+
+        // --- CHARTS & EXCEL ---
         function renderCharts() {
-            // Data prep
-            const ctxPie = $('chartPie');
-            const ctxBar = $('chartBar');
-            
-            // Top qarzdorlar
-            const debtors = DB.clients.map(c => ({name: c.name, debt: getClientTotals(c).debt}))
-                                      .filter(x => x.debt > 0)
-                                      .sort((a,b) => b.debt - a.debt)
-                                      .slice(0, 5);
-            
-            // Oylik harajat vs tushum (demo uchun oddiy)
-            const expenseTotal = DB.expenses.reduce((s, e) => s + parse(e.amount), 0);
-            const incomeTotal = DB.clients.reduce((s, c) => s + getClientTotals(c).paid, 0);
+            const ctxPie = $('chartPie'); const ctxBar = $('chartBar');
+            // Logic for charts (Top Qarzdorlar, Balance)
+            const debtors = DB.clients.map(c => {
+                let d = parse(c.init||0); c.history?.forEach(h => d += (h.type==='trade'?(h.qty*h.price):-h.amount));
+                return {name: c.name, debt: d};
+            }).filter(x => x.debt > 0).sort((a,b) => b.debt - a.debt).slice(0,5);
 
             if(window.myPie) window.myPie.destroy();
             window.myPie = new Chart(ctxPie, {
                 type: 'doughnut',
                 data: {
                     labels: debtors.map(d => d.name),
-                    datasets: [{
-                        data: debtors.map(d => d.debt),
-                        backgroundColor: ['#702C2B', '#C56869', '#DB9F95', '#A04040', '#E08080']
-                    }]
+                    datasets: [{ data: debtors.map(d => d.debt), backgroundColor: ['#702C2B', '#C56869', '#DB9F95', '#A04040', '#F3D7D4'] }]
                 },
-                options: { plugins: { title: { display: true, text: 'Top 5 Qarzdorlar', color: '#702C2B' } } }
-            });
-
-            if(window.myBar) window.myBar.destroy();
-            window.myBar = new Chart(ctxBar, {
-                type: 'bar',
-                data: {
-                    labels: ['Tushum', 'Harajat'],
-                    datasets: [{
-                        label: "So'm",
-                        data: [incomeTotal, expenseTotal],
-                        backgroundColor: ['#702C2B', '#C56869']
-                    }]
-                },
-                options: { 
-                    plugins: { title: { display: true, text: 'Umumiy balans', color: '#702C2B' } },
-                    scales: { y: { beginAtZero: true } }
-                }
+                options: { plugins: { title: { display: true, text: 'Top 5 Qarzdorlar' } } }
             });
         }
 
-        // === EXCEL EXPORT ===
         function exportExcel() {
             const wb = XLSX.utils.book_new();
-            
-            // Mijozlar
             const cData = DB.clients.map(c => {
-                const t = getClientTotals(c);
-                return { "Ism": c.name, "Telefon": c.phone, "Jami Savdo": t.totalTrade, "To'langan": t.paid, "Qarz": t.debt };
+                let d = parse(c.init||0), p = 0, t = 0;
+                c.history?.forEach(h => { if(h.type==='trade'){ let v=h.qty*h.price; d+=v; t+=v; } else { d-=h.amount; p+=h.amount; } });
+                return { "Ism": c.name, "Telefon": c.phone, "Savdo": t, "To'lov": p, "Qarz": d };
             });
-            const ws1 = XLSX.utils.json_to_sheet(cData);
-            XLSX.utils.book_append_sheet(wb, ws1, "Mijozlar");
-
-            // Ombor
-            const ws2 = XLSX.utils.json_to_sheet(DB.warehouse);
-            XLSX.utils.book_append_sheet(wb, ws2, "Omborxona");
-
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cData), "Mijozlar");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(DB.warehouse), "Ombor");
             XLSX.writeFile(wb, "Hisobot.xlsx");
         }
 
-        // === INIT ===
-        function refreshAll() {
-            renderClients();
-            renderWarehouse();
-            renderExpenses();
-        }
-        
+        function refreshAll() { renderClients(); renderWarehouse(); renderExpenses(); }
         refreshAll();
         feather.replace();
-
     </script>
 </body>
 </html>
