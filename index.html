@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qarz Tizimi - Elegant Dashboard</title>
+    <title>Qarz Tizimi - Green Dashboard</title>
     
     <script src="https://unpkg.com/feather-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
-        /* ============== 1. UMUMIY DIZAYN & PALITRA ============== */
+        /* ============== 1. UMUMIY DIZAYN & PALITRA (Palette -06) ============== */
         :root {
-            /* --- SIZNING PALITRANGIZ --- */
-            --col-dark-red: #702C2B;   /* Asosiy urg'u (Primary) */
-            --col-rose: #C56869;       /* Ikkilamchi (Secondary) */
-            --col-peach: #DB9F95;      /* Hoshiyalar (Border) */
-            --col-blush: #F3D7D4;      /* Och fon (Light bg) */
+            /* --- YANGI YASHIL PALITRA --- */
+            --col-deep-green: #2F5233; /* Eng to'q yashil */
+            --col-main-green: #337B01; /* Asosiy yashil (Primary) */
+            --col-soft-green: #76B947; /* Yumshoq yashil (Secondary) */
+            --col-pale-green: #BEEAC5; /* Juda och yashil (Light bg) */
             
             /* --- TIZIM RANGLARI --- */
-            --primary: var(--col-dark-red);
-            --primary-hover: var(--col-rose);
-            --bg-body: #ffffff;        /* TALABINGIZGA BINOAN: OQ FON */
-            --bg-sidebar: #ffffff;     /* Sidebar ham oq */
-            --text-main: #2D2D2D;      /* Asosiy matn */
-            --text-muted: #6b7280;     /* Kulrang matn */
-            --border: var(--col-peach);/* Chiroyli shaftoli rangi chegaralar uchun */
+            --primary: var(--col-main-green);
+            --primary-hover: var(--col-deep-green);
+            --bg-body: #ffffff;        /* FON OQ */
+            --bg-sidebar: #ffffff;     
+            --text-main: #2D2D2D;      
+            --text-muted: #6b7280;     
+            --border: var(--col-pale-green); /* Hoshiyalar och yashil */
             
-            --danger: #ef4444;         /* O'chirish tugmasi uchun */
+            --danger: #ef4444;         
             --sidebar-width: 260px;
             --radius: 8px;
         }
@@ -95,14 +95,14 @@
         }
 
         .nav-item:hover {
-            background-color: var(--col-blush); /* Hover bo'lganda och pushti */
-            color: var(--primary);
+            background-color: var(--col-pale-green); 
+            color: var(--col-deep-green);
         }
 
         .nav-item.active {
             background-color: var(--primary);
             color: white;
-            box-shadow: 0 4px 10px rgba(112, 44, 43, 0.3); /* To'q qizil soya */
+            box-shadow: 0 4px 10px rgba(51, 123, 1, 0.3); /* Yashil soya */
         }
 
         .nav-item i { width: 20px; height: 20px; }
@@ -114,7 +114,7 @@
             justify-content: center;
         }
         .logout-btn:hover {
-            background: var(--col-blush);
+            background: var(--col-pale-green);
         }
 
         /* ============== 3. ASOSIY QISM (Main) ============== */
@@ -139,7 +139,7 @@
         .page-header-title {
             font-size: 20px;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--col-deep-green);
         }
 
         .content-area {
@@ -166,7 +166,7 @@
         .btn-primary {
             background-color: var(--primary);
             color: white;
-            box-shadow: 0 2px 5px rgba(112, 44, 43, 0.2);
+            box-shadow: 0 2px 5px rgba(51, 123, 1, 0.2);
         }
         .btn-primary:hover { background-color: var(--primary-hover); }
 
@@ -175,7 +175,7 @@
             border: 1px solid var(--border);
             color: var(--text-main);
         }
-        .btn-outline:hover { background: var(--col-blush); border-color: var(--primary); }
+        .btn-outline:hover { background: var(--col-pale-green); border-color: var(--primary); }
 
         /* Filterlar */
         .filter-bar {
@@ -197,7 +197,7 @@
         }
         .form-control:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(112, 44, 43, 0.1);
+            box-shadow: 0 0 0 3px rgba(51, 123, 1, 0.1);
         }
 
         /* Jadvallar (Card Style) */
@@ -218,12 +218,12 @@
             text-align: left;
             padding: 16px 24px;
             border-bottom: 1px solid var(--border);
-            color: var(--primary); /* Sarlavha rangi primary */
+            color: var(--col-deep-green);
             font-weight: 700;
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            background: var(--col-blush); /* Palitradagi och fon */
+            background: #f0fdf4; /* Juda och yashil fon */
         }
 
         td {
@@ -235,9 +235,8 @@
         }
 
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background-color: #fffcfc; } /* Juda och qizg'ish hover */
+        tr:hover td { background-color: #f9fff9; }
         
-        /* Qarzdorlar uchun qizilroq fon */
         tr.warn-row td { background-color: rgba(239, 68, 68, 0.05); }
 
         /* Amallar tugmalari */
@@ -248,9 +247,9 @@
             padding: 6px;
             border-radius: 6px;
             transition: .2s;
-            color: var(--col-rose);
+            color: var(--col-soft-green);
         }
-        .icon-btn:hover { background: var(--col-blush); color: var(--primary); }
+        .icon-btn:hover { background: var(--col-pale-green); color: var(--primary); }
         .icon-btn.delete { color: var(--danger); }
         .icon-btn.delete:hover { background: #fee2e2; }
 
@@ -272,16 +271,23 @@
         .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
         .stat-value { font-size: 26px; font-weight: 800; color: var(--primary); }
 
-        /* Modallar (Dialog) */
+        /* ================== DIALOG (MODAL) TUZATILDI ================== */
         dialog {
+            /* O'rtaga joylashtirish sirlari: */
+            position: fixed; 
+            inset: 0;        /* 4 tarafdan yopishish */
+            margin: auto;    /* Avtomatik o'rtaga olish */
+            z-index: 9999;
+            
             border: none;
             border-radius: 12px;
-            width: 100%;
+            width: 90%;      /* Mobil moslashuv */
             max-width: 550px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             padding: 0;
+            background: #fff;
         }
-        dialog::backdrop { background: rgba(112, 44, 43, 0.3); backdrop-filter: blur(3px); }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
         
         .modal-header {
             padding: 20px 24px;
@@ -291,7 +297,7 @@
             align-items: center;
             background: #fff;
         }
-        .modal-title { font-weight: 700; font-size: 18px; color: var(--primary); }
+        .modal-title { font-weight: 700; font-size: 18px; color: var(--col-deep-green); }
         .modal-body { padding: 24px; display: grid; gap: 16px; background: #fff; }
         .modal-footer {
             padding: 16px 24px;
@@ -598,7 +604,7 @@
             <span class="modal-title"><span id="histClientName"></span> — Tarix</span>
             <button onclick="closeModal('dlgHistory')" style="border:none; background:none; cursor:pointer"><i data-feather="x"></i></button>
         </div>
-        <div class="modal-body" style="background: var(--col-blush);">
+        <div class="modal-body" style="background: #fcfcfc;">
             
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                 <div style="background:white; padding:20px; border-radius:12px; border:1px solid var(--border)">
@@ -649,14 +655,14 @@
     </dialog>
 
     <script>
-        // --- SETUP ---
+        // === UTILS ===
         const $ = id => document.getElementById(id);
         const fmt = n => Number(n).toLocaleString('uz-UZ');
         const parse = n => parseFloat(n) || 0;
         const genId = () => Math.random().toString(36).substr(2,9);
         $('current-date').innerText = new Date().toLocaleDateString('uz-UZ', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
 
-        // --- DATABASE ---
+        // === DATABASE ===
         const DB = {
             clients: JSON.parse(localStorage.getItem('bp_clients') || '[]'),
             warehouse: JSON.parse(localStorage.getItem('bp_warehouse') || '[]'),
@@ -670,7 +676,7 @@
         };
         let currClientIdx = null;
 
-        // --- NAVIGATION ---
+        // === NAVIGATION ===
         function switchTab(tab) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -681,7 +687,7 @@
         }
         function toggleSidebar() { $('sidebar').classList.toggle('show'); }
 
-        // --- MIJOZLAR ---
+        // === MIJOZLAR ===
         function renderClients() {
             const tbody = $('tbody-clients'); tbody.innerHTML = '';
             const search = $('search-client').value.toLowerCase();
@@ -740,7 +746,7 @@
                 tr.innerHTML = `
                     <td><img src="${w.img || 'https://via.placeholder.com/40?text=Foto'}" class="product-img"></td>
                     <td style="font-weight:600">${w.name}</td>
-                    <td><span style="background:var(--col-blush); padding:4px 8px; border-radius:6px; font-size:12px; color:var(--primary)">${w.unit}</span></td>
+                    <td><span style="background:var(--col-pale-green); padding:4px 8px; border-radius:6px; font-size:12px; color:var(--primary)">${w.unit}</span></td>
                     <td style="font-weight:700">${fmt(w.qty)}</td>
                     <td>${fmt(w.price)} so'm</td>
                     <td style="text-align:right"><button class="icon-btn delete" onclick="delProduct(${i})"><i data-feather="trash-2" style="width:16px"></i></button></td>
@@ -907,7 +913,7 @@
                 type: 'doughnut',
                 data: {
                     labels: debtors.map(d => d.name),
-                    datasets: [{ data: debtors.map(d => d.debt), backgroundColor: ['#702C2B', '#C56869', '#DB9F95', '#A04040', '#F3D7D4'] }]
+                    datasets: [{ data: debtors.map(d => d.debt), backgroundColor: ['#337B01', '#76B947', '#2F5233', '#BEEAC5', '#99CC66'] }]
                 },
                 options: { plugins: { title: { display: true, text: 'Top 5 Qarzdorlar' } } }
             });
